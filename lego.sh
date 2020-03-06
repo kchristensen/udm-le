@@ -25,18 +25,14 @@ deploy_cert() {
 		cp -f "${CERT}" ${CERT_PATH}/unifi-core.crt
 		cp -f "${KEY}" ${CERT_PATH}/unifi-core.key
 		chmod 644 ${CERT_PATH}/unifi-core.*
-
+		# This doesn't reboot your router, it just restarts the UnifiOS container
 		unifi-os restart
 	else
 		echo 'No new certificate was found, exiting without restart'
 	fi
 }
 
-# You might have to change this next line depending on what DNS provider you use
-# Using --env-file with podman doesn't seem to export the Cloudflare variables
-# so that lego sees them.
-PODMAN_ENV="-e CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY} -e CLOUDFLARE_EMAIL=${CLOUDFLARE_EMAIL}"
-PODMAN_CMD="podman run -it --rm --name=lego --network=host ${PODMAN_ENV} -v ${SSL_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
+PODMAN_CMD="podman run -it --env-file=${SSL_PATH}/lego.env --rm --name=lego --network=host -v ${SSL_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --domains ${CERT_HOST} --email ${CERT_EMAIL}"
 
 CRON_FILE='/etc/cron.d/lego'
