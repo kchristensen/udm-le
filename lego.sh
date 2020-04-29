@@ -32,12 +32,12 @@ deploy_cert() {
 	fi
 }
 
-PODMAN_CMD="podman run -it --env-file=${SSL_PATH}/lego.env --rm --name=lego --network=host -v ${SSL_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
-LEGO_ARGS="--dns ${DNS_PROVIDER} --domains ${CERT_HOST} --email ${CERT_EMAIL}"
+PODMAN_CMD="podman run --env-file=${SSL_PATH}/lego.env --it --name=lego --network=host --rm -v ${SSL_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
+LEGO_ARGS="--dns ${DNS_PROVIDER} --domains ${CERT_HOST} --email ${CERT_EMAIL} --key-type rsa2048"
 
 CRON_FILE='/etc/cron.d/lego'
 if [ ! -f "${CRON_FILE}" ]; then
-	echo "0 3 * * * sh ${SSL_PATH}/lego.sh renew" > ${CRON_FILE}
+	echo "0 3 * * * sh ${SSL_PATH}/lego.sh renew" >${CRON_FILE}
 	chmod 644 ${CRON_FILE}
 	/etc/init.d/crond reload ${CRON_FILE}
 fi
@@ -50,7 +50,7 @@ initial)
 	fi
 
 	echo 'Attempting initial certificate generation'
-	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos --key-type rsa2048 run && deploy_cert
+	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert
 	;;
 renew)
 	echo 'Attempting certificate renewal'
