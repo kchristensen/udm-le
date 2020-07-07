@@ -5,11 +5,6 @@ set -e
 # Load environment variables
 . /mnt/data/udm-le/udm-le.env
 
-if [ $(basedir) != "${UDM_LE_PATH}" ]; then
-	echo "The directory in which this script resides (${BASEDIR}) does not match what UDM_LE_PATH is set to (${UDM_LE_PATH})"
-	exit 1
-fi
-
 deploy_cert() {
 	CERT="${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.crt"
 	KEY="${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.key"
