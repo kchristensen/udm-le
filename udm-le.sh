@@ -54,7 +54,7 @@ if [ ! -f "${CRON_FILE}" ]; then
 	/etc/init.d/crond reload ${CRON_FILE}
 fi
 
-PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/lego.env -it --name=lego --network=host --rm -v ${UDM_LE_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
+PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm -v ${UDM_LE_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} ${HOSTS_ARGS} --key-type rsa2048"
 
 case $1 in
