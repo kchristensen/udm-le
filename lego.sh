@@ -15,12 +15,25 @@ if [ "${BASEDIR}" != "${SSL_PATH}" ]; then
 	exit 1
 fi
 
+# Added support for SAN
+CERT_NAME=""
+HOSTS_ARGS=""
+for DOM in $(echo $CERT_HOST | tr "," "\n")
+do
+	if [ -z "$CERT_NAME" ]
+	then
+		CERT_NAME $DOM
+	fi
+    
+	HOSTS_ARGS+="-d $DOM"
+done
+
 deploy_cert() {
-	CERT="${SSL_PATH}/lego/certificates/${CERT_HOST}.crt"
-	KEY="${SSL_PATH}/lego/certificates/${CERT_HOST}.key"
+	CERT="${SSL_PATH}/lego/certificates/${CERT_NAME}.crt"
+	KEY="${SSL_PATH}/lego/certificates/${CERT_NAME}.key"
 	CERT_PATH='/mnt/data/unifi-os/unifi-core/config'
 
-	if [ "$(find -L "${SSL_PATH}"/lego -type f -name "${CERT_HOST}".crt -mmin -5)" ]; then
+	if [ "$(find -L "${SSL_PATH}"/lego -type f -name "${CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
 		cp -f "${CERT}" ${CERT_PATH}/unifi-core.crt
 		cp -f "${KEY}" ${CERT_PATH}/unifi-core.key
@@ -32,8 +45,8 @@ deploy_cert() {
 	fi
 }
 
-PODMAN_CMD="podman run --env-file=${SSL_PATH}/lego.env --it --name=lego --network=host --rm -v ${SSL_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
-LEGO_ARGS="--dns ${DNS_PROVIDER} --domains ${CERT_HOST} --email ${CERT_EMAIL} --key-type rsa2048"
+PODMAN_CMD="podman run --env-file=${SSL_PATH}/lego.env -it --name=lego --network=host --rm -v ${SSL_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
+LEGO_ARGS="--dns ${DNS_PROVIDER} ${HOSTS_ARGS} --email ${CERT_EMAIL} --key-type rsa2048"
 
 CRON_FILE='/etc/cron.d/lego'
 if [ ! -f "${CRON_FILE}" ]; then
