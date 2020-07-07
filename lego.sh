@@ -22,10 +22,10 @@ for DOM in $(echo $CERT_HOST | tr "," "\n")
 do
 	if [ -z "$CERT_NAME" ]
 	then
-		CERT_NAME $DOM
+		CERT_NAME=$DOM
 	fi
     
-	HOSTS_ARGS+="-d $DOM"
+	HOSTS_ARGS="${HOSTS_ARGS} -d $DOM"
 done
 
 deploy_cert() {
