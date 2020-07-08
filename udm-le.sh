@@ -54,9 +54,10 @@ LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} ${HOSTS_ARGS} --key-type 
 
 case $1 in
 initial)
-	if [ "$(stat -c '%u:%g' "${UDM_LE_PATH}/udm-le")" != "1000:1000" ]; then
-		mkdir "${UDM_LE_PATH}"/udm-le
-		chown 1000:1000 "${UDM_LE_PATH}"/udm-le
+	# Create lego directory so the container can write to it
+	if [ "$(stat -c '%u:%g' "${UDM_LE_PATH}/lego")" != "1000:1000" ]; then
+		mkdir "${UDM_LE_PATH}"/lego
+		chown 1000:1000 "${UDM_LE_PATH}"/lego
 	fi
 
 	echo 'Attempting initial certificate generation'
