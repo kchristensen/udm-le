@@ -9,12 +9,19 @@ deploy_cert() {
 	CERT="${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.crt"
 	KEY="${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.key"
 	CERT_PATH='/mnt/data/unifi-os/unifi-core/config'
+	PORTAL_CERT_PATH='/mnt/data/system/ssl/private/redirector'
 
 	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
+		# Controller certificate
 		cp -f "${CERT}" ${CERT_PATH}/unifi-core.crt
 		cp -f "${KEY}" ${CERT_PATH}/unifi-core.key
 		chmod 644 ${CERT_PATH}/unifi-core.*
+		# Captive portal certificate
+		cp -f "${CERT}" ${PORTAL_CERT_PATH}/server.crt
+		cp -f "${KEY}" ${PORTAL_CERT_PATH}/server.key
+		chmod 644 ${PORTAL_CERT_PATH}/server.*
+
 		# This doesn't reboot your router, it just restarts the UnifiOS container
 		unifi-os restart
 	else
