@@ -6,21 +6,19 @@ set -e
 . /mnt/data/udm-le/udm-le.env
 
 deploy_cert() {
-	CERT="${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.crt"
-	KEY="${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.key"
-	CERT_PATH='/mnt/data/unifi-os/unifi-core/config'
-	PORTAL_CERT_PATH='/mnt/data/system/ssl/private/redirector'
+	CERT_IMPORT_CMD='java -jar /usr/lib/unifi/lib/ace.jar import_key_cert'
+	UBIOS_CERT_PATH='/mnt/data/unifi-os/unifi-core/config'
+	UNIFIOS_CERT_PATH='/data/unifi-core/config'
 
 	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
 		# Controller certificate
-		cp -f "${CERT}" ${CERT_PATH}/unifi-core.crt
-		cp -f "${KEY}" ${CERT_PATH}/unifi-core.key
-		chmod 644 ${CERT_PATH}/unifi-core.*
-		# Captive portal certificate
-		cp -f "${CERT}" ${PORTAL_CERT_PATH}/server.crt
-		cp -f "${KEY}" ${PORTAL_CERT_PATH}/server.key
-		chmod 644 ${PORTAL_CERT_PATH}/server.*
+		cp -f ${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.crt ${UBIOS_CERT_PATH}/unifi-core.crt
+		cp -f ${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.key ${UBIOS_CERT_PATH}/unifi-core.key
+		chmod 644 ${UBIOS_CERT_PATH}/unifi-core.*
+
+		# Import the ertificate for the captive portal
+		podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
 
 		# This doesn't reboot your router, it just restarts the UnifiOS container
 		unifi-os restart
