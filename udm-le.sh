@@ -38,6 +38,12 @@ for DOMAIN in $(echo $CERT_HOSTS | tr "," "\n"); do
 	HOSTS_ARGS="${HOSTS_ARGS} -d ${DOMAIN}"
 done
 
+# Check for aws directory, add that mount point to the lego container
+AWS_MOUNT=''
+if [ -d ${UDM_LE_PATH}/.aws ]; then
+        AWS_MOUNT="-v ${UDM_LE_PATH}/aws:/home/lego/.aws/"
+fi
+
 # Setup persistent on_boot.d trigger
 ON_BOOT_DIR='/mnt/data/on_boot.d'
 ON_BOOT_FILE='99-udm-le.sh'
@@ -54,7 +60,7 @@ if [ ! -f "${CRON_FILE}" ]; then
 	/etc/init.d/crond reload ${CRON_FILE}
 fi
 
-PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm -v ${UDM_LE_PATH}/lego/:/var/lib/lego/ hectormolinero/lego"
+PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm -v ${UDM_LE_PATH}/lego/:/var/lib/lego/ ${AWS_MOUNT} hectormolinero/lego"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} ${HOSTS_ARGS} --key-type rsa2048"
 
 case $1 in
