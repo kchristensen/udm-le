@@ -39,7 +39,6 @@ for DOMAIN in $(echo $CERT_HOSTS | tr "," "\n"); do
 done
 
 # Check for aws directory, add that mount point to the lego container
-# TODO add support for AWS_PROFILE
 AWS_MOUNT=''
 if [ -d ${UDM_LE_PATH}/.aws ]; then
         AWS_MOUNT="-v ${UDM_LE_PATH}/aws:/home/lego/.aws/"
