@@ -1,4 +1,4 @@
-# LetsEncrypt for Ubiquiti UbiOS firmwares
+# Let's Encrypt for Ubiquiti UbiOS firmwares
 
 ## Overview
 
