@@ -48,7 +48,7 @@ fi
 ON_BOOT_DIR='/mnt/data/on_boot.d'
 ON_BOOT_FILE='99-udm-le.sh'
 if [ ! -f "${ON_BOOT_DIR}/${ON_BOOT_FILE}" ]; then
-	cp on_boot.d/${ON_BOOT_FILE} ${ON_BOOT_DIR}/${ON_BOOT_FILE}
+	cp ${UDM_LE_PATH}/on_boot.d/${ON_BOOT_FILE} ${ON_BOOT_DIR}/${ON_BOOT_FILE}
 	chmod 755 ${ON_BOOT_DIR}/${ON_BOOT_FILE}
 fi
 
