@@ -16,7 +16,7 @@ get it working with any of the supported [Lego DNS Providers](https://go-acme.gi
 ## Installation
 
 1. Copy the contents of this repo to your device at `/mnt/data/udm-le`.
-2. Edit `udm-le.env` and set up the required variables.
+2. Edit `udm-le.env` and tweak variables to meet your needs.
 3. Run `/mnt/data/udm-le/udm-le.sh initial`. This will handle your initial certificate generation and setup a cron task at `/etc/cron.d/udm-le` to attempt certificate renewal each morning at 0300.
 
 ## Persistance

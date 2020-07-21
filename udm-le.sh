@@ -5,6 +5,10 @@ set -e
 # Load environment variables
 . /mnt/data/udm-le/udm-le.env
 
+# Setup variables for later
+DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/var/lib/lego/"
+LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
+
 deploy_cert() {
 	CERT_IMPORT_CMD='java -jar /usr/lib/unifi/lib/ace.jar import_key_cert'
 	UBIOS_CERT_PATH='/mnt/data/unifi-os/unifi-core/config'
@@ -27,21 +31,22 @@ deploy_cert() {
 	fi
 }
 
+# Support alternative DNS resolvers
+if [ "${DNS_RESOLVERS}" != "" ]; then
+	LEGO_ARGS="${LEGO_ARGS} --dns.resolvers ${DNS_RESOLVERS}"
+fi
+
 # Support multiple certificate SANs
-CERT_NAME=''
-HOSTS_ARGS=''
 for DOMAIN in $(echo $CERT_HOSTS | tr "," "\n"); do
 	if [ -z "$CERT_NAME" ]; then
 		CERT_NAME=$DOMAIN
 	fi
-
-	HOSTS_ARGS="${HOSTS_ARGS} -d ${DOMAIN}"
+	LEGO_ARGS="${LEGO_ARGS} -d ${DOMAIN}"
 done
 
-# Check for aws directory, add that mount point to the lego container
-AWS_MOUNT=''
-if [ -d ${UDM_LE_PATH}/.aws ]; then
-        AWS_MOUNT="-v ${UDM_LE_PATH}/aws:/home/lego/.aws/"
+# Check for optional .aws directory, and add it to the mounts if it exists
+if [ -d "${UDM_LE_PATH}/.aws" ]; then
+        DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/aws:/home/lego/.aws/"
 fi
 
 # Setup persistent on_boot.d trigger
@@ -60,8 +65,7 @@ if [ ! -f "${CRON_FILE}" ]; then
 	/etc/init.d/crond reload ${CRON_FILE}
 fi
 
-PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm -v ${UDM_LE_PATH}/lego/:/var/lib/lego/ ${AWS_MOUNT} hectormolinero/lego"
-LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} ${HOSTS_ARGS} --key-type rsa2048"
+PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} hectormolinero/lego"
 
 case $1 in
 initial)
