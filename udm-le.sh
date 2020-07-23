@@ -17,7 +17,7 @@ deploy_cert() {
 		cp -f ${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.key ${UBIOS_CERT_PATH}/unifi-core.key
 		chmod 644 ${UBIOS_CERT_PATH}/unifi-core.*
 
-		# Import the ertificate for the captive portal
+		# Import the certificate for the captive portal
 		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
 			podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
 	
