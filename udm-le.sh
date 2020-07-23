@@ -10,10 +10,6 @@ DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/var/lib/lego/"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
 
 deploy_cert() {
-	CERT_IMPORT_CMD='java -jar /usr/lib/unifi/lib/ace.jar import_key_cert'
-	UBIOS_CERT_PATH='/mnt/data/unifi-os/unifi-core/config'
-	UNIFIOS_CERT_PATH='/data/unifi-core/config'
-
 	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
 		# Controller certificate
@@ -22,10 +18,12 @@ deploy_cert() {
 		chmod 644 ${UBIOS_CERT_PATH}/unifi-core.*
 
 		# Import the ertificate for the captive portal
-		podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
-
-		# This doesn't reboot your router, it just restarts the UnifiOS container
-		unifi-os restart
+		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
+			podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+	
+			# This doesn't reboot your router, it just restarts the UnifiOS container
+			unifi-os restart
+		fi
 	else
 		echo 'No new certificate was found, exiting without restart'
 	fi
