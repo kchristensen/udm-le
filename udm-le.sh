@@ -8,27 +8,26 @@ set -e
 # Setup variables for later
 DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/var/lib/lego/"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
+NEW_CERT=""
 
 deploy_cert() {
-	CERT_IMPORT_CMD='java -jar /usr/lib/unifi/lib/ace.jar import_key_cert'
-	UBIOS_CERT_PATH='/mnt/data/unifi-os/unifi-core/config'
-	UNIFIOS_CERT_PATH='/data/unifi-core/config'
-
 	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
 		# Controller certificate
 		cp -f ${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.crt ${UBIOS_CERT_PATH}/unifi-core.crt
 		cp -f ${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.key ${UBIOS_CERT_PATH}/unifi-core.key
 		chmod 644 ${UBIOS_CERT_PATH}/unifi-core.*
-
-		# Import the ertificate for the captive portal
-		podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
-
-		# This doesn't reboot your router, it just restarts the UnifiOS container
-		unifi-os restart
+		NEW_CERT="yes"
 	else
 		echo 'No new certificate was found, exiting without restart'
 	fi
+}
+
+add_captive(){
+	 # Import the certificate for the captive portal
+         if [ "$ENABLE_CAPTIVE" == "yes" ]; then
+         	podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+         fi
 }
 
 # Support alternative DNS resolvers
@@ -76,10 +75,17 @@ initial)
 	fi
 
 	echo 'Attempting initial certificate generation'
-	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert
+	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert && add_captive && unifi-os restart
 	;;
 renew)
 	echo 'Attempting certificate renewal'
 	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert
+	if [ "${NEW_CERT}" = "yes" ]; then
+		add_captive && unifi-os restart
+	fi
+	;;
+bootrenew)
+	echo 'Attempting certificate renewal'
+	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && unifi-os restart
 	;;
 esac
