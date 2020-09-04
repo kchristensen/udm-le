@@ -6,7 +6,7 @@ set -e
 . /mnt/data/udm-le/udm-le.env
 
 # Setup variables for later
-DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/var/lib/lego/"
+DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/.lego/"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
 NEW_CERT=""
 
@@ -64,7 +64,7 @@ if [ ! -f "${CRON_FILE}" ]; then
 	/etc/init.d/crond reload ${CRON_FILE}
 fi
 
-PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} hectormolinero/lego"
+PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} goacme/lego:v4.0.1-arm.v8"
 
 case $1 in
 initial)
