@@ -45,7 +45,7 @@ done
 
 # Check for optional .aws directory, and add it to the mounts if it exists
 if [ -d "${UDM_LE_PATH}/.aws" ]; then
-        DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.aws:/home/lego/.aws/"
+        DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.aws:/root/.aws/"
 fi
 
 # Setup persistent on_boot.d trigger
