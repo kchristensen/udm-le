@@ -6,7 +6,6 @@ This should work on UbiOS based firmware versions 1.7.0 onwards. This includes:
 
 * UniFi Dream Machine
 * UniFi Dream Machine Pro
-* Probably the UniFi Next-Gen Gateway
 
 This script supports issuing LetsEncrypt certificates via DNS using [Lego](https://go-acme.github.io/lego/).
 
