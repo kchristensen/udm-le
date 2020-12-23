@@ -48,6 +48,12 @@ if [ -d "${UDM_LE_PATH}/.aws" ]; then
         DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.aws:/root/.aws/"
 fi
 
+# Check for optional .gcloud directory, and add it to the mounts if it exists
+if [ -d "${UDM_LE_PATH}/.gcloud" ]; then
+        DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.gcloud:/root/.gcloud/"
+fi
+
+
 # Setup persistent on_boot.d trigger
 ON_BOOT_DIR='/mnt/data/on_boot.d'
 ON_BOOT_FILE='99-udm-le.sh'
