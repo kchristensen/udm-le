@@ -11,10 +11,8 @@ LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
 NEW_CERT=""
 
 deploy_cert() {
-	#Re-write CERT_NAME if it is a wildcard cert to replace * with _
-	LEGO_CERT_NAME=echo ${$CERT_NAME/#\*/_} 
-
-
+	#Re-write CERT_NAME if it is a wildcard cert. Replace * with _
+	LEGO_CERT_NAME=${CERT_NAME/\*/_}
 	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
 		# Controller certificate
