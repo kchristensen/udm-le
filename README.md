@@ -32,8 +32,7 @@ AWS Route53 DNS challenge can use configuration and authentication values easily
 
 ### GCP Cloud DNS
 
-GCP Cloud DNS can be configured by establishing a service account with the role `roles/dns.admin`. Ensure that the variable 
-`GCE_SERVICE_ACCOUNT_FILE` references the path to the service account file as exported from GCP. The `DNS_PROVIDER` in `udm-le.env` must be set to `gcloud` and a new directory called `.gcloud` in `/mnt/data/udm-le` and add `credentials` and `config` files as required for authentication.
+GCP Cloud DNS can be configured by establishing a service account with the role [`roles/dns.admin`](https://cloud.google.com/iam/docs/understanding-roles#dns-roles) and exporting a [service account key](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) for that service account. Ensure that `gcloud` is set for `DNS_PROVIDER` in `udm-le.env`, and `GCE_SERVICE_ACCOUNT_FILE` references the path to the service account key (e.g. `./root/.gcloud/my_service_account.json`) . Create a new directory called `.gcloud` in `/mnt/data/udm-le` and add the service account file.
 
 ### Cloudflare
 
