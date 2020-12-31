@@ -11,11 +11,13 @@ LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
 NEW_CERT=""
 
 deploy_cert() {
-	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${CERT_NAME}".crt -mmin -5)" ]; then
+	#Re-write CERT_NAME if it is a wildcard cert. Replace * with _
+	LEGO_CERT_NAME=${CERT_NAME/\*/_}
+	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
 		# Controller certificate
-		cp -f ${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.crt ${UBIOS_CERT_PATH}/unifi-core.crt
-		cp -f ${UDM_LE_PATH}/lego/certificates/${CERT_NAME}.key ${UBIOS_CERT_PATH}/unifi-core.key
+		cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.crt ${UBIOS_CERT_PATH}/unifi-core.crt
+		cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.key ${UBIOS_CERT_PATH}/unifi-core.key
 		chmod 644 ${UBIOS_CERT_PATH}/unifi-core.*
 		NEW_CERT="yes"
 	else
@@ -47,6 +49,12 @@ done
 if [ -d "${UDM_LE_PATH}/.aws" ]; then
         DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.aws:/root/.aws/"
 fi
+
+# Check for optional .gcloud directory, and add it to the mounts if it exists
+if [ -d "${UDM_LE_PATH}/.gcloud" ]; then
+        DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.gcloud:/root/.gcloud/"
+fi
+
 
 # Setup persistent on_boot.d trigger
 ON_BOOT_DIR='/mnt/data/on_boot.d'
@@ -87,5 +95,9 @@ renew)
 bootrenew)
 	echo 'Attempting certificate renewal'
 	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && unifi-os restart
+	;;
+testdeploy)
+	echo 'Attempting to deploy certificate'
+	deploy_cert
 	;;
 esac
