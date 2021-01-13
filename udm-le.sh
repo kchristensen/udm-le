@@ -45,16 +45,10 @@ for DOMAIN in $(echo $CERT_HOSTS | tr "," "\n"); do
 	LEGO_ARGS="${LEGO_ARGS} -d ${DOMAIN}"
 done
 
-# Check for optional .aws directory, and add it to the mounts if it exists
-if [ -d "${UDM_LE_PATH}/.aws" ]; then
-        DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.aws:/root/.aws/"
+# Check for optional .secrets directory, and add it to the mounts if it exists
+if [ -d "${UDM_LE_PATH}/.secrets" ]; then
+	DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.secrets:/root/.secrets/"
 fi
-
-# Check for optional .gcloud directory, and add it to the mounts if it exists
-if [ -d "${UDM_LE_PATH}/.gcloud" ]; then
-        DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.gcloud:/root/.gcloud/"
-fi
-
 
 # Setup persistent on_boot.d trigger
 ON_BOOT_DIR='/mnt/data/on_boot.d'
