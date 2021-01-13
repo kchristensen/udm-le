@@ -53,9 +53,11 @@ Assuming the DNS zone lives in subscription `00000000-0000-0000-0000-00000000000
 az login
 
 # create a service principal with contributor (default) permissions over the godns resource group
-az ad sp create-for-rbac --name godns --scope /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/udm-le
+az ad sp create-for-rbac --name godns --scope /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/udm-le --role contributor
 ```
 
 The CLI will output a JSON object. Use the printed properties to initialize your configuration in [udm-le.env](./udm-le.env).
 
-Note: the `password` value is a secret and as such you may want to omit it from [udm-le.env](./udm-le.env) and instead set it in a `.secrets/client-secret.txt` file.
+Note:
+- The `password` value is a secret and as such you may want to omit it from [udm-le.env](./udm-le.env) and instead set it in a `.secrets/client-secret.txt` file
+- The `appId` value is what [Lego](https://go-acme.github.io/lego/) calls a client id
