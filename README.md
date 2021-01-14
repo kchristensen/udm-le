@@ -19,7 +19,7 @@ Out of the box, it has tested support for select [DNS providers](#dns-providers)
 
 ## Persistance
 
-On firmware updates, the cron file (`/etc/cron.d/udm-le`) gets removed, so if you'd like for this to persist between upgrades, I suggest so you install boostchicken's [on-boot-script](https://github.com/boostchicken/udm-utilities/tree/master/on-boot-script) package.
+On firmware updates or just reboots, the cron file (`/etc/cron.d/udm-le`) gets removed, so if you'd like for this to persist, I suggest so you install boostchicken's [on-boot-script](https://github.com/boostchicken/udm-utilities/tree/master/on-boot-script) package.
 
 This script is setup such that if it determines that on-boot-script is enabled, it will set up an additional script at `/mnt/data/on_boot.d/99-udm-le.sh` which will attempt certificate renewal shortly after a reboot (and subsequently set the cron back up again).
 
