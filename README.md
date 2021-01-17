@@ -7,6 +7,8 @@ This should work on UbiOS based firmware versions 1.7.0 onwards. This includes:
 * UniFi Dream Machine
 * UniFi Dream Machine Pro
 
+It does *NOT* support the Cloud Key Gen 2 or Gen 2 Plus as they do not ship with Docker (podman) support.
+
 This script supports issuing LetsEncrypt certificates via DNS using [Lego](https://go-acme.github.io/lego/).
 
 Out of the box, it has tested support for select [DNS providers](#dns-providers) but with little work you could get it working with any of the supported [Lego DNS Providers](https://go-acme.github.io/lego/dns/).
