@@ -46,8 +46,10 @@ for DOMAIN in $(echo $CERT_HOSTS | tr "," "\n"); do
 done
 
 # Check for optional .secrets directory, and add it to the mounts if it exists
+# Lego does not support AWS_ACCESS_KEY_ID_FILE or AWS_PROFILE_FILE so we'll try
+# mounting the secrets directory into a place that Route53 will see.
 if [ -d "${UDM_LE_PATH}/.secrets" ]; then
-	DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.secrets:/root/.secrets/"
+	DOCKER_VOLUMES="${DOCKER_VOLUMES} -v ${UDM_LE_PATH}/.secrets:/root/.aws/ -v ${UDM_LE_PATH}/.secrets:/root/.secrets/"
 fi
 
 # Setup persistent on_boot.d trigger
