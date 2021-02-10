@@ -11,7 +11,7 @@ LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
 NEW_CERT=""
 
 deploy_cert() {
-	#Re-write CERT_NAME if it is a wildcard cert. Replace * with _
+	# Re-write CERT_NAME if it is a wildcard cert. Replace * with _
 	LEGO_CERT_NAME=${CERT_NAME/\*/_}
 	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
@@ -66,7 +66,7 @@ if [ ! -f "${CRON_FILE}" ]; then
 	/etc/init.d/crond reload ${CRON_FILE}
 fi
 
-PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} goacme/lego:v4.0.1-arm.v8"
+PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} goacme/lego:v4.2.0-arm.v8"
 
 case $1 in
 initial)
