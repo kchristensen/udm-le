@@ -10,6 +10,13 @@ DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/.lego/"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
 NEW_CERT=""
 
+add_captive() {
+	# Import the certificate for the captive portal
+	if [ "$ENABLE_CAPTIVE" == "yes" ]; then
+	podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+	fi
+}
+
 deploy_cert() {
 	# Re-write CERT_NAME if it is a wildcard cert. Replace * with _
 	LEGO_CERT_NAME=${CERT_NAME/\*/_}
@@ -25,11 +32,21 @@ deploy_cert() {
 	fi
 }
 
-add_captive(){
-	 # Import the certificate for the captive portal
-         if [ "$ENABLE_CAPTIVE" == "yes" ]; then
-         	podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
-         fi
+restart_unifi_os() {
+	# Attempt to restart unifi-os, and retry a few times in the event it fails
+	unifi-os restart
+
+	RETRIES=1
+	until [ "$(podman inspect -f '{{.State.Running}}' "unifi-os" 2>&1)" = "true" ];
+	do
+		if [ "$RETRIES" -gt 5 ]; then
+			echo 'Unable to restart unifi-os after 5 attempts, exiting'
+			exit 1
+		fi
+		unifi-os restart
+		sleep 5
+		let "RETRIES=RETRIES+1"
+	done
 }
 
 # Support alternative DNS resolvers
@@ -79,18 +96,18 @@ initial)
 	fi
 
 	echo 'Attempting initial certificate generation'
-	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert && add_captive && unifi-os restart
+	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert && add_captive && restart_unifi_os
 	;;
 renew)
 	echo 'Attempting certificate renewal'
 	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert
 	if [ "${NEW_CERT}" = "yes" ]; then
-		add_captive && unifi-os restart
+		add_captive && restart_unifi_os
 	fi
 	;;
 bootrenew)
 	echo 'Attempting certificate renewal'
-	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && unifi-os restart
+	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && restart_unifi_os
 	;;
 testdeploy)
 	echo 'Attempting to deploy certificate'
