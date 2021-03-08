@@ -13,7 +13,7 @@ NEW_CERT=""
 add_captive() {
 	# Import the certificate for the captive portal
 	if [ "$ENABLE_CAPTIVE" == "yes" ]; then
-	podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+		podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
 	fi
 }
 
