@@ -32,23 +32,6 @@ deploy_cert() {
 	fi
 }
 
-restart_unifi_os() {
-	# Attempt to restart unifi-os, and retry a few times in the event it fails
-	unifi-os restart
-
-	RETRIES=1
-	until [ "$(podman inspect -f '{{.State.Running}}' "unifi-os" 2>&1)" = "true" ];
-	do
-		if [ "$RETRIES" -gt 5 ]; then
-			echo 'Unable to restart unifi-os after 5 attempts, exiting'
-			exit 1
-		fi
-		unifi-os restart
-		sleep 5
-		let "RETRIES=RETRIES+1"
-	done
-}
-
 # Support alternative DNS resolvers
 if [ "${DNS_RESOLVERS}" != "" ]; then
 	LEGO_ARGS="${LEGO_ARGS} --dns.resolvers ${DNS_RESOLVERS}"
@@ -96,18 +79,18 @@ initial)
 	fi
 
 	echo 'Attempting initial certificate generation'
-	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert && add_captive && restart_unifi_os
+	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert && add_captive && podman restart unifi-os &
 	;;
 renew)
 	echo 'Attempting certificate renewal'
 	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert
 	if [ "${NEW_CERT}" = "yes" ]; then
-		add_captive && restart_unifi_os
+		add_captive && podman restart unifi-os &
 	fi
 	;;
 bootrenew)
 	echo 'Attempting certificate renewal'
-	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && restart_unifi_os
+	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && podman restart unifi-os &
 	;;
 testdeploy)
 	echo 'Attempting to deploy certificate'
