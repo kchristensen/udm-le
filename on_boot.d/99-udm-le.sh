@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Load Environmnt Variables
+# Load Environmnt Variables
 . /mnt/data/udm-le/udm-le.env
 
 if [ ! -f /etc/cron.d/udm-le ]; then

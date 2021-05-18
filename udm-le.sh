@@ -89,7 +89,7 @@ renew)
 	fi
 	;;
 bootrenew)
-	echo 'Attempting certificate renewal'
+	echo 'Attempting certificate renewal on boot'
 	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && unifi-os restart &>/dev/null &
 	;;
 testdeploy)
