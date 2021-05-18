@@ -54,7 +54,7 @@ In your Cloudflare account settings, create an API token with the following perm
 
 Once you have your token generated, add the value to `udm-le.env`.
 
-### DigitalOcean
+### Digital Ocean
 
 If you use DigitalOcean as your DNS provider, set your `DNS_PROVIDER` to `digitalocean` and configure your `DO_AUTH_TOKEN`. Note: Quoting your `DO_AUTH_TOKEN` seems to cause issues with Lego.
 
