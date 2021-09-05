@@ -68,7 +68,7 @@ if [ ! -f "${CRON_FILE}" ]; then
 	/etc/init.d/crond reload ${CRON_FILE}
 fi
 
-PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} goacme/lego:v4.2.0-arm.v8"
+PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} ${CONTAINER_IMAGE}:${CONTAINER_IMAGE_TAG}"
 
 case $1 in
 initial)
