@@ -79,18 +79,18 @@ initial)
 	fi
 
 	echo 'Attempting initial certificate generation'
-	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert && add_captive && unifi-os restart &>/dev/null &
+	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert && add_captive && unifi-os restart &>/dev/null
 	;;
 renew)
 	echo 'Attempting certificate renewal'
 	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert
 	if [ "${NEW_CERT}" = "yes" ]; then
-		add_captive && unifi-os restart &>/dev/null &
+		add_captive && unifi-os restart &>/dev/null
 	fi
 	;;
 bootrenew)
 	echo 'Attempting certificate renewal on boot'
-	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && unifi-os restart &>/dev/null &
+	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && unifi-os restart &>/dev/null
 	;;
 testdeploy)
 	echo 'Attempting to deploy certificate'
