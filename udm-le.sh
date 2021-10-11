@@ -8,27 +8,46 @@ set -e
 # Setup variables for later
 DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/.lego/"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
-NEW_CERT=""
+RESTART_SERVICES=${RESTART_SERVICES:-false}
 
-add_captive() {
-	# Import the certificate for the captive portal
-	if [ "$ENABLE_CAPTIVE" == "yes" ]; then
-		podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
-	fi
-}
+deploy_certs() {
+	# Deploy certificates for the controller and optionally for the captive portal and radius server
 
-deploy_cert() {
 	# Re-write CERT_NAME if it is a wildcard cert. Replace * with _
 	LEGO_CERT_NAME=${CERT_NAME/\*/_}
 	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
-		# Controller certificate
-		cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.crt ${UBIOS_CERT_PATH}/unifi-core.crt
-		cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.key ${UBIOS_CERT_PATH}/unifi-core.key
-		chmod 644 ${UBIOS_CERT_PATH}/unifi-core.*
-		NEW_CERT="yes"
+
+		cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.crt ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.crt
+		cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.key ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.key
+		chmod 644 ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.crt ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.key
+
+		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
+			podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+		fi
+
+		if [ "$ENABLE_RADIUS" == "yes" ]; then
+			cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.crt ${UBIOS_RADIUS_CERT_PATH}/server.pem
+			cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.key ${UBIOS_RADIUS_CERT_PATH}/server-key.pem
+			chmod 600 ${UBIOS_RADIUS_CERT_PATH}/server.pem ${UBIOS_RADIUS_CERT_PATH}/server-key.pem
+		fi
+
+		RESTART_SERVICES=true
+	fi
+}
+
+restart_services() {
+	# Restart services if certificates have been deployed, or we're forcing it on the command line
+	if [ "${RESTART_SERVICES}" == true ]; then
+		echo 'Restarting UniFi OS'
+		unifi-os restart &>/dev/null
+
+		if [ "$ENABLE_RADIUS" == "yes" ]; then
+			echo 'Restarting Radius server'
+			rc.radius restart &>/dev/null
+		fi
 	else
-		echo 'No new certificate was found, exiting without restart'
+		echo 'RESTART_SERVICES is false, skipping service restarts'
 	fi
 }
 
@@ -79,21 +98,14 @@ initial)
 	fi
 
 	echo 'Attempting initial certificate generation'
-	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_cert && add_captive && unifi-os restart &>/dev/null
+	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
 	;;
 renew)
 	echo 'Attempting certificate renewal'
-	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert
-	if [ "${NEW_CERT}" = "yes" ]; then
-		add_captive && unifi-os restart &>/dev/null
-	fi
+	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_certs && restart_services
 	;;
-bootrenew)
-	echo 'Attempting certificate renewal on boot'
-	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_cert && add_captive && unifi-os restart &>/dev/null
-	;;
-testdeploy)
+test_deploy)
 	echo 'Attempting to deploy certificate'
-	deploy_cert
+	deploy_certs
 	;;
 esac

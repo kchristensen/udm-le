@@ -7,5 +7,5 @@ if [ ! -f /etc/cron.d/udm-le ]; then
 	# Sleep for 5 minutes to avoid restarting
 	# services during system startup.
 	sleep 300
-	sh ${UDM_LE_PATH}/udm-le.sh bootrenew
+	RESTART_SERVICES=true sh ${UDM_LE_PATH}/udm-le.sh renew
 fi
