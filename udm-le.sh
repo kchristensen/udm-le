@@ -23,7 +23,7 @@ deploy_certs() {
 		chmod 644 ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.crt ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.key
 
 		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
-			podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+			update_keystore
 		fi
 
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
@@ -49,6 +49,10 @@ restart_services() {
 	else
 		echo 'RESTART_SERVICES is false, skipping service restarts'
 	fi
+}
+
+update_keystore() {
+	podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
 }
 
 # Support alternative DNS resolvers
