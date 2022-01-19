@@ -17,9 +17,16 @@ usage()
   echo "Actions:"
   echo "	- udm-le.sh initial: Generate new certificate and set up cron job to renew at 03:00 each morning."
   echo "	- udm-le.sh renew: Renew certificate if due for renewal."
+  echo "	- udm-le.sh update_keystore --restart-services: Update keystore used by Captive Portal/WiFiman"
+  echo "	  with either full certificate chain (if NO_BUNDLE='no') or server certificate only (if NO_BUNDLE='yes')."
+  echo "	  Requires --restart-services flag. "
   echo ""
   echo "Options:"
   echo "	--restart-services: [optional] force restart of services even if certificate not renewed."
+  echo ""
+  echo "WARNING: NO_BUNDLE option is only supported experimentally. Setting it to 'yes' is required to make WiFiman work,"
+  echo "but may result in some clients not being able to connect to Captive Portal if they do not already have a cached"
+  echo "copy of the CA intermediate certificate(s) and are unable to download them."
 }
 
 # Get command line options
