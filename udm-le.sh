@@ -8,7 +8,44 @@ set -e
 # Setup variables for later
 DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/.lego/"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
-RESTART_SERVICES=${RESTART_SERVICES:-false}
+RESTART_SERVICES=false
+
+# Show usage
+usage()
+{
+  echo "Usage: udm-le.sh action [ --restart-services ]"
+  echo "Actions:"
+  echo "	- udm-le.sh initial: Generate new certificate and set up cron job to renew at 03:00 each morning."
+  echo "	- udm-le.sh renew: Renew certificate if due for renewal."
+  echo ""
+  echo "Options:"
+  echo "	--restart-services: [optional] force restart of services even if certificate not renewed."
+}
+
+# Get command line options
+OPTIONS=$(getopt -o h --long help,restart-services -- "$@")
+if [[ $? -ne 0 ]]; then
+    echo "Incorrect option provided"
+    exit 1;
+fi
+
+eval set -- "$OPTIONS"
+while [ : ]; do
+  case "$1" in
+    -h | --help)
+		usage;
+		exit 0;
+		shift
+		;;
+    --restart-services)
+        RESTART_SERVICES=true;
+        shift
+        ;;
+    --) shift; 
+        break 
+        ;;
+  esac
+done
 
 deploy_certs() {
 	# Deploy certificates for the controller and optionally for the captive portal and radius server
@@ -106,10 +143,15 @@ initial)
 	;;
 renew)
 	echo 'Attempting certificate renewal'
+	echo ${PODMAN_CMD} ${LEGO_ARGS}
 	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_certs && restart_services
 	;;
 test_deploy)
 	echo 'Attempting to deploy certificate'
 	deploy_certs
 	;;
+*)
+	echo "ERROR: No valid action provided."
+	usage;
+	exit 1;
 esac
