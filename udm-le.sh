@@ -89,7 +89,28 @@ restart_services() {
 }
 
 update_keystore() {
-	podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+	if [ "$NO_BUNDLE" == "yes" ]; then
+		# Only import server certifcate to keystore. WiFiman requires a single certificate in the .crt file 
+		# and does not work if the full chain is imported as this includes the CA intermediate certificates.
+		echo "	- Importing server certificate only"
+		# 1. Export only the server certificate from the full chain bundle
+		podman exec -it unifi-os openssl x509 -in ${UNIFIOS_CERT_PATH}/unifi-core.crt > ${UNIFIOS_CERT_PATH}/unifi-core-server-only.crt
+		# 2. Bundle the private key and server-only certificate into a PKCS12 format file
+		podman exec -it unifi-os openssl pkcs12 -export -inkey ${UNIFIOS_CERT_PATH}/unifi-core.key -in ${UNIFIOS_CERT_PATH}/unifi-core-server-only.crt \
+			-out ${UNIFIOS_KEYSTORE_PATH}/unifi-core-key-plus-server-only-cert.p12 -name ${UNIFIOS_KEYSTORE_CERT_ALIAS} -password pass:${UNIFIOS_KEYSTORE_PASSWORD}
+		# 3. Backup the keystore before editing it.
+		podman exec -it unifi-os cp ${UNIFIOS_KEYSTORE_PATH}/keystore ${UNIFIOS_KEYSTORE_PATH}/keystore_$(date +"%Y-%m-%d_%Hh%Mm%Ss").backup
+		# 4. Delete the existing full chain from the keystore
+		podman exec -it unifi-os keytool -delete -alias unifi -keystore ${UNIFIOS_KEYSTORE_PATH}/keystore -deststorepass ${UNIFIOS_KEYSTORE_PASSWORD}
+		# 5. Import the server-only certificate and private key from the PKCS12 file
+		podman exec -it unifi-os keytool -importkeystore -deststorepass ${UNIFIOS_KEYSTORE_PASSWORD} -destkeypass ${UNIFIOS_KEYSTORE_PASSWORD} \
+			-destkeystore ${UNIFIOS_KEYSTORE_PATH}/keystore -srckeystore ${UNIFIOS_KEYSTORE_PATH}/unifi-core-key-plus-server-only-cert.p12 \
+			-srcstoretype PKCS12 -srcstorepass ${UNIFIOS_KEYSTORE_PASSWORD} -alias ${UNIFIOS_KEYSTORE_CERT_ALIAS} -noprompt
+	else
+		# Import full certificate chain bundle to keystore
+		echo "	- Importing full certificate chain bundle"
+		podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+	fi
 }
 
 # Support alternative DNS resolvers
@@ -149,6 +170,10 @@ renew)
 test_deploy)
 	echo 'Attempting to deploy certificate'
 	deploy_certs
+	;;
+update_keystore)
+	echo 'Attempting to update keystore used by hotspot Captive Portal and WiFiman'
+	update_keystore && restart_services
 	;;
 *)
 	echo "ERROR: No valid action provided."
