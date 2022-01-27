@@ -71,3 +71,7 @@ The CLI will output a JSON object. Use the printed properties to initialize your
 Note:
 - The `password` value is a secret and as such you may want to omit it from [udm-le.env](./udm-le.env) and instead set it in a `.secrets/client-secret.txt` file
 - The `appId` value is what [Lego](https://go-acme.github.io/lego/) calls a client id
+
+### Linode DNS
+
+If you use Linode as your DNS provider, set your `DNS_PROVIDER` to `linode` and configure `LINODE_TOKEN` with the value of an API token. The API token must have a scope which allows Read/Write access to "Domains". API tokens can be created in the Linode Control panel.
