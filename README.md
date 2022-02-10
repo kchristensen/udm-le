@@ -62,6 +62,10 @@ If you use DigitalOcean as your DNS provider, set your `DNS_PROVIDER` to `digita
 
 If you use DuckDNS as your DNS provider, set your `DNS_PROVIDER` to `duckdns` and configure your `DUCKDNS_TOKEN`.
 
+### Gandi Live DNS (v5)
+
+If you use Gandi Live DNS (v5) as your DNS provider, set your `DNS_PROVIDER` to `gandiv5` and configure your `GANDIV5_API_KEY`. You can obtain your API key at your [account settings](https://account.gandi.net/).  
+
 ### Google Cloud DNS
 
 GCP Cloud DNS can be configured by establishing a service account with the role [`roles/dns.admin`](https://cloud.google.com/iam/docs/understanding-roles#dns-roles) and exporting a [service account key](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) for that service account. Ensure that `gcloud` is set for `DNS_PROVIDER` in `udm-le.env`, and `GCE_SERVICE_ACCOUNT_FILE` references the path to the service account key (e.g. `./root/.secrets/my_service_account.json`) . Create a new directory called `.secrets` in `/mnt/data/udm-le` and add the service account file.
