@@ -64,7 +64,7 @@ If you use DuckDNS as your DNS provider, set your `DNS_PROVIDER` to `duckdns` an
 
 ### Gandi Live DNS (v5)
 
-If you use Gandi Live DNS (v5) as your DNS provider, set your `DNS_PROVIDER` to `gandiv5` and configure your `GANDIV5_API_KEY`. You can obtain your API key at your [account settings](https://account.gandi.net/).  
+If you use Gandi Live DNS (v5) as your DNS provider, set your `DNS_PROVIDER` to `gandiv5` and configure your `GANDIV5_API_KEY`. You can obtain your API key at your [account settings](https://account.gandi.net/).
 
 ### Google Cloud DNS
 
@@ -79,3 +79,22 @@ Note:
 ### Linode DNS
 
 If you use Linode as your DNS provider, set your `DNS_PROVIDER` to `linode` and configure `LINODE_TOKEN` with the value of an API token. The API token must have a scope which allows Read/Write access to "Domains". API tokens can be created in the Linode Control panel.
+
+### Oracle Cloud Infrastructure (OCI) DNS
+
+To configure the Oracle Cloud Infrastructure (OCI) DNS provider, you will need a [private API signing key](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm) and your [tenancy and user account OCIDs](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five). The quickest way to get all that is to install the [OCI CLI](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cliconcepts.htm) locally and use its [interactive setup process](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm#configfile).
+
+The setup process will create a `~/.oci/config` directory in which you can find your tenancy and user account OCIDs and key fingerprint and the API signing key will be stored in `~/.oci/oci_api_key.pem`. The following CLI command will return the compartment OCID for the specified OCI DNS zone:
+
+```bash
+$ oci dns zone get --zone-name-or-id example.com | jq -r '.data."compartment-id"'
+ocid1.compartment.oc1..secret
+```
+
+#### To configure the provider
+
+> **Important: do not wrap the values of the `OCI_*` variables in `udm-le.env` with quotes. The lack of quotes around the example values provided in [`udm-le.env`](./udm-le.env) is intentional and must be maintained.
+
+1. Set the `DNS_PROVIDER` value to `"oraclecloud"`
+1. Uncomment and copy the values from each `~/.oci/config` variable to the similarly named `OCI_*` variable in `udm-le.env`.
+1. Create a new directory at `/mnt/data/udm-le/.secrets` and copy the `oci_api_key.pem` file that directory.
