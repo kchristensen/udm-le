@@ -80,6 +80,17 @@ Note:
 
 If you use Linode as your DNS provider, set your `DNS_PROVIDER` to `linode` and configure `LINODE_TOKEN` with the value of an API token. The API token must have a scope which allows Read/Write access to "Domains". API tokens can be created in the Linode Control panel.
 
+
+### Name.com
+Follow [these instructions](https://www.name.com/support/articles/360007597874-signing-up-for-api-access) from name.com support to enable api access.
+
+At the time of writing, the first few steps our out of date and I had to click `API for resellers` under the more menu which should get you to step 3.
+
+If using Multifactor to login then you will need to read [this article](https://www.name.com/support/articles/360007989433-using-api-with-two-step-authentication) about how to disable multifactor for api only.
+
+There are two values needed for the `udm-le.env` file: your name.com username; your generated api token for production.
+
+
 ### Oracle Cloud Infrastructure (OCI) DNS
 
 To configure the Oracle Cloud Infrastructure (OCI) DNS provider, you will need a [private API signing key](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm) and your [tenancy and user account OCIDs](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five). The quickest way to get all that is to install the [OCI CLI](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cliconcepts.htm) locally and use its [interactive setup process](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm#configfile).
