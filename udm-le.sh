@@ -88,7 +88,13 @@ restart_services() {
 
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
 			echo 'Restarting Radius server'
-			rc.radius restart &>/dev/null
+            if [ -x "$(command -v rc.radius)" ]; then 
+                rc.radius restart &>/dev/null
+            elif [ -x "$(command -v rc.radiusd)" ];then 
+                rc.radiusd restart &>/dev/null
+            else
+                echo 'Radius command not found'
+            fi
 		fi
 	else
 		echo 'RESTART_SERVICES is false, skipping service restarts'
