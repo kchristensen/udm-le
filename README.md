@@ -109,3 +109,9 @@ ocid1.compartment.oc1..secret
 1. Set the `DNS_PROVIDER` value to `"oraclecloud"`
 1. Uncomment and copy the values from each `~/.oci/config` variable to the similarly named `OCI_*` variable in `udm-le.env`.
 1. Create a new directory at `/mnt/data/udm-le/.secrets` and copy the `oci_api_key.pem` file that directory.
+
+### Zonomi
+
+If you use Zonomi as your DNS provider, set your `DNS_PROVIDER` to `zonomi` and configure your `ZONOMI_API_KEY`.
+
+The API key can be obtained [in your control panel](https://zonomi.com/app/cp/apikeys.jsp) under the dns key type.
