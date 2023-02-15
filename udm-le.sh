@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
 # Load environment variables
-. /mnt/data/udm-le/udm-le.env
+. /persistent/udm-le/udm-le.env
 
 # Setup variables for later
 DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/.lego/"
@@ -147,7 +147,7 @@ if [ -d "${UDM_LE_PATH}/.secrets" ]; then
 fi
 
 # Setup persistent on_boot.d trigger
-ON_BOOT_DIR='/mnt/data/on_boot.d'
+ON_BOOT_DIR='/persistent/on_boot.d'
 ON_BOOT_FILE='99-udm-le.sh'
 if [ -d "${ON_BOOT_DIR}" ] && [ ! -f "${ON_BOOT_DIR}/${ON_BOOT_FILE}" ]; then
 	cp "${UDM_LE_PATH}/on_boot.d/${ON_BOOT_FILE}" "${ON_BOOT_DIR}/${ON_BOOT_FILE}"
