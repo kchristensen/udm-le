@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Load Environmnt Variables
-. /mnt/data/udm-le/udm-le.env
+. /persistent/udm-le/udm-le.env
 
 if [ ! -f /etc/cron.d/udm-le ]; then
 	# Sleep for 5 minutes to avoid restarting

@@ -107,22 +107,22 @@ update_keystore() {
 		# and does not work if the full chain is imported as this includes the CA intermediate certificates.
 		echo "	- Importing server certificate only"
 		# 1. Export only the server certificate from the full chain bundle
-		podman exec -it unifi-os openssl x509 -in ${UNIFIOS_CERT_PATH}/unifi-core.crt > ${UNIFIOS_CERT_PATH}/unifi-core-server-only.crt
+		${PODMAN_CMD} openssl x509 -in ${UNIFIOS_CERT_PATH}/unifi-core.crt > ${UNIFIOS_CERT_PATH}/unifi-core-server-only.crt
 		# 2. Bundle the private key and server-only certificate into a PKCS12 format file
-		podman exec -it unifi-os openssl pkcs12 -export -inkey ${UNIFIOS_CERT_PATH}/unifi-core.key -in ${UNIFIOS_CERT_PATH}/unifi-core-server-only.crt \
+		${PODMAN_CMD} openssl pkcs12 -export -inkey ${UNIFIOS_CERT_PATH}/unifi-core.key -in ${UNIFIOS_CERT_PATH}/unifi-core-server-only.crt \
 			-out ${UNIFIOS_KEYSTORE_PATH}/unifi-core-key-plus-server-only-cert.p12 -name ${UNIFIOS_KEYSTORE_CERT_ALIAS} -password pass:${UNIFIOS_KEYSTORE_PASSWORD}
 		# 3. Backup the keystore before editing it.
-		podman exec -it unifi-os cp ${UNIFIOS_KEYSTORE_PATH}/keystore ${UNIFIOS_KEYSTORE_PATH}/keystore_$(date +"%Y-%m-%d_%Hh%Mm%Ss").backup
+		${PODMAN_CMD} cp ${UNIFIOS_KEYSTORE_PATH}/keystore ${UNIFIOS_KEYSTORE_PATH}/keystore_$(date +"%Y-%m-%d_%Hh%Mm%Ss").backup
 		# 4. Delete the existing full chain from the keystore
-		podman exec -it unifi-os keytool -delete -alias unifi -keystore ${UNIFIOS_KEYSTORE_PATH}/keystore -deststorepass ${UNIFIOS_KEYSTORE_PASSWORD}
+		${PODMAN_CMD} keytool -delete -alias unifi -keystore ${UNIFIOS_KEYSTORE_PATH}/keystore -deststorepass ${UNIFIOS_KEYSTORE_PASSWORD}
 		# 5. Import the server-only certificate and private key from the PKCS12 file
-		podman exec -it unifi-os keytool -importkeystore -deststorepass ${UNIFIOS_KEYSTORE_PASSWORD} -destkeypass ${UNIFIOS_KEYSTORE_PASSWORD} \
+		${PODMAN_CMD} unifi-os keytool -importkeystore -deststorepass ${UNIFIOS_KEYSTORE_PASSWORD} -destkeypass ${UNIFIOS_KEYSTORE_PASSWORD} \
 			-destkeystore ${UNIFIOS_KEYSTORE_PATH}/keystore -srckeystore ${UNIFIOS_KEYSTORE_PATH}/unifi-core-key-plus-server-only-cert.p12 \
 			-srcstoretype PKCS12 -srcstorepass ${UNIFIOS_KEYSTORE_PASSWORD} -alias ${UNIFIOS_KEYSTORE_CERT_ALIAS} -noprompt
 	else
 		# Import full certificate chain bundle to keystore
 		echo "	- Importing full certificate chain bundle"
-		podman exec -it unifi-os ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
+		${PODMAN_CMD} ${CERT_IMPORT_CMD} ${UNIFIOS_CERT_PATH}/unifi-core.key ${UNIFIOS_CERT_PATH}/unifi-core.crt
 	fi
 }
 
@@ -162,7 +162,14 @@ if [ ! -f "${CRON_FILE}" ]; then
 	/etc/init.d/crond reload ${CRON_FILE}
 fi
 
-PODMAN_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} ${CONTAINER_IMAGE}:${CONTAINER_IMAGE_TAG}"
+# Check if podman exists - if no, assume we're on UnifiOS 2.x+
+if [ $(which podman) ]; then 
+	LEGO_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} ${CONTAINER_IMAGE}:${CONTAINER_IMAGE_TAG}"
+	PODMAN_CMD="podman exec -it unifi-os"
+else 
+	LEGO_CMD="/usr/local/bin/lego"
+	PODMAN_CMD=""
+fi
 
 case $1 in
 initial)
@@ -173,12 +180,12 @@ initial)
 	fi
 
 	echo 'Attempting initial certificate generation'
-	${PODMAN_CMD} ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
+	${LEGO_CMD} ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
 	;;
 renew)
 	echo 'Attempting certificate renewal'
-	echo ${PODMAN_CMD} ${LEGO_ARGS}
-	${PODMAN_CMD} ${LEGO_ARGS} renew --days 60 && deploy_certs && restart_services
+	echo ${LEGO_CMD} ${LEGO_ARGS}
+	${LEGO_CMD} ${LEGO_ARGS} renew --days 60 && deploy_certs && restart_services
 	;;
 test_deploy)
 	echo 'Attempting to deploy certificate'
