@@ -1,0 +1,10 @@
+[Unit]
+Description=A oneshot service to ensure udm-le is in crontab
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c "/persistent/udm-le/on_boot.d/99-udm-le.sh"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

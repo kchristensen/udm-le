@@ -9,6 +9,7 @@ set -e
 DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/.lego/"
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
 RESTART_SERVICES=false
+UDM_LEGACY=true
 
 # Show usage
 usage()
@@ -54,16 +55,24 @@ while [ : ]; do
   esac
 done
 
+command_exists() {
+  command -v "${1:-}" >/dev/null 2>&1
+}
+
+depends_on() {
+  ! command_exists "${1:-}" && echo "Missing dependencie(s): \`$*\`" 1>&2 && exit 1
+}
+
 deploy_certs() {
 	# Deploy certificates for the controller and optionally for the captive portal and radius server
 
 	# Re-write CERT_NAME if it is a wildcard cert. Replace * with _
 	LEGO_CERT_NAME=${CERT_NAME/\*/_}
-	if [ "$(find -L "${UDM_LE_PATH}"/lego -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
+	if [ "$(find -L "${LEGO_PATH}" -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
 		echo 'New certificate was generated, time to deploy it'
 
-		cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.crt ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.crt
-		cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.key ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.key
+		cp -f ${LEGO_PATH}/certificates/${LEGO_CERT_NAME}.crt ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.crt
+		cp -f ${LEGO_PATH}/certificates/${LEGO_CERT_NAME}.key ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.key
 		chmod 644 ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.crt ${UBIOS_CONTROLLER_CERT_PATH}/unifi-core.key
 
 		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
@@ -71,8 +80,8 @@ deploy_certs() {
 		fi
 
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
-			cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.crt ${UBIOS_RADIUS_CERT_PATH}/server.pem
-			cp -f ${UDM_LE_PATH}/lego/certificates/${LEGO_CERT_NAME}.key ${UBIOS_RADIUS_CERT_PATH}/server-key.pem
+			cp -f ${LEGO_PATH}/certificates/${LEGO_CERT_NAME}.crt ${UBIOS_RADIUS_CERT_PATH}/server.pem
+			cp -f ${LEGO_PATH}/certificates/${LEGO_CERT_NAME}.key ${UBIOS_RADIUS_CERT_PATH}/server-key.pem
 			chmod 600 ${UBIOS_RADIUS_CERT_PATH}/server.pem ${UBIOS_RADIUS_CERT_PATH}/server-key.pem
 		fi
 
@@ -88,9 +97,9 @@ restart_services() {
 
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
 			echo 'Restarting Radius server'
-			if [ -x "$(command -v rc.radius)" ]; then 
+			if [ command_exists rc.radius ]; then 
 				rc.radius restart &>/dev/null
-			elif [ -x "$(command -v rc.radiusd)" ];then 
+			elif [ command_exists rc.radiusd ];then 
 				rc.radiusd restart &>/dev/null
 			else
 				echo 'Radius command not found'
@@ -126,6 +135,18 @@ update_keystore() {
 	fi
 }
 
+# Check if podman exists - if no, assume we're on UnifiOS 2.x+
+if [ command_exists podman ]; then 
+	LEGO_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} ${CONTAINER_IMAGE}:${CONTAINER_IMAGE_TAG}"
+	PODMAN_CMD="podman exec -it unifi-os"
+	LEGO_PATH="${UDM_LE_PATH}/lego"
+else 
+	LEGO_CMD="/usr/local/bin/lego"
+	PODMAN_CMD=""
+	LEGO_PATH="${UDM_LE_PATH}/.lego"
+	UDM_LEGACY=false
+fi
+
 # Support alternative DNS resolvers
 if [ "${DNS_RESOLVERS}" != "" ]; then
 	LEGO_ARGS="${LEGO_ARGS} --dns.resolvers ${DNS_RESOLVERS}"
@@ -155,28 +176,28 @@ if [ -d "${ON_BOOT_DIR}" ] && [ ! -f "${ON_BOOT_DIR}/${ON_BOOT_FILE}" ]; then
 fi
 
 # Setup nightly cron job
+# Slightly different for UnifiOS > 2.x
 CRON_FILE='/etc/cron.d/udm-le'
-if [ ! -f "${CRON_FILE}" ]; then
-	echo "0 3 * * * sh ${UDM_LE_PATH}/udm-le.sh renew" >${CRON_FILE}
-	chmod 644 ${CRON_FILE}
-	/etc/init.d/crond reload ${CRON_FILE}
+if [ UDM_LEGACY ]; then
+	CRON_STRING="0 3 * * * sh ${UDM_LE_PATH}/udm-le.sh renew"
+	CRON_CMD=/etc/init.d/crond
+else
+	CRON_STRING="0 3 * * * root ${UDM_LE_PATH}/udm-le.sh renew"
+	CRON_CMD=/etc/init.d/cron
 fi
 
-# Check if podman exists - if no, assume we're on UnifiOS 2.x+
-if [ $(which podman) ]; then 
-	LEGO_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} ${CONTAINER_IMAGE}:${CONTAINER_IMAGE_TAG}"
-	PODMAN_CMD="podman exec -it unifi-os"
-else 
-	LEGO_CMD="/usr/local/bin/lego"
-	PODMAN_CMD=""
+if [ ! -f "${CRON_FILE}" ]; then
+	echo $CRON_STRING >${CRON_FILE}
+	chmod 644 ${CRON_FILE}
+	${CRON_CMD} reload ${CRON_FILE}
 fi
 
 case $1 in
 initial)
 	# Create lego directory so the container can write to it
-	if [ "$(stat -c '%u:%g' "${UDM_LE_PATH}/lego")" != "1000:1000" ]; then
-		mkdir "${UDM_LE_PATH}"/lego
-		chown 1000:1000 "${UDM_LE_PATH}"/lego
+	if [ "$(stat -c '%u:%g' "${LEGO_PATH}")" != "1000:1000" ]; then
+		mkdir "${LEGO_PATH}"
+		chown 1000:1000 "${LEGO_PATH}"
 	fi
 
 	echo 'Attempting initial certificate generation'
