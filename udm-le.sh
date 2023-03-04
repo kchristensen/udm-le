@@ -97,9 +97,9 @@ restart_services() {
 
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
 			echo 'Restarting Radius server'
-			if [ command_exists rc.radius ]; then 
+			if command_exists rc.radius; then 
 				rc.radius restart &>/dev/null
-			elif [ command_exists rc.radiusd ];then 
+			elif command_exists rc.radiusd;then 
 				rc.radiusd restart &>/dev/null
 			else
 				echo 'Radius command not found'
@@ -136,7 +136,7 @@ update_keystore() {
 }
 
 # Check if podman exists - if no, assume we're on UnifiOS 2.x+
-if [ command_exists podman ]; then 
+if command_exists podman; then 
 	LEGO_CMD="podman run --env-file=${UDM_LE_PATH}/udm-le.env -it --name=lego --network=host --rm ${DOCKER_VOLUMES} ${CONTAINER_IMAGE}:${CONTAINER_IMAGE_TAG}"
 	PODMAN_CMD="podman exec -it unifi-os"
 	LEGO_PATH="${UDM_LE_PATH}/lego"
@@ -178,7 +178,7 @@ fi
 # Setup nightly cron job
 # Slightly different for UnifiOS > 2.x
 CRON_FILE='/etc/cron.d/udm-le'
-if [ UDM_LEGACY ]; then
+if $UDM_LEGACY; then
 	CRON_STRING="0 3 * * * sh ${UDM_LE_PATH}/udm-le.sh renew"
 	CRON_CMD=/etc/init.d/crond
 else
