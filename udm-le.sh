@@ -91,9 +91,13 @@ deploy_certs() {
 
 restart_services() {
 	# Restart services if certificates have been deployed, or we're forcing it on the command line
-	if [ "${RESTART_SERVICES}" == true ]; then
+	if $RESTART_SERVICES; then
 		echo 'Restarting UniFi OS'
-		unifi-os restart &>/dev/null
+		if $UDM_LEGACY; then
+			unifi-os restart &>/dev/null
+		else
+			systemctl restart unifi-core
+		fi
 
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
 			echo 'Restarting Radius server'
