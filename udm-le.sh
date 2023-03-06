@@ -4,6 +4,8 @@ set -e
 
 # Load environment variables
 . /persistent/udm-le/udm-le.env
+# for local dev
+# . ./udm-le.env
 
 # Setup variables for later
 DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/.lego/"
@@ -61,6 +63,23 @@ command_exists() {
 
 depends_on() {
   ! command_exists "${1:-}" && echo "Missing dependencie(s): \`$*\`" 1>&2 && exit 1
+}
+
+install_binary() {
+	# Download and install LEGO binary
+
+	depends_on wget
+	depends_on tar
+	wget --directory-prefix=/tmp ${LEGO_BINARY_URL}
+	# extract only the lego binary file from tarball with "no-same-owner (-o)" 
+	tar -xozf /tmp/${LEGO_BINARY} --directory=${BINARY_PATH} lego
+}
+
+setup_service() {
+	# Setup udm-le-startup.service to ensure udm-le is in cron.d after reboots / updates
+
+	depends_on systemctl
+	systemctl enable ${UDM_LE_PATH}/on_boot.d/udm-le-startup.service	
 }
 
 deploy_certs() {
@@ -145,7 +164,7 @@ if command_exists podman; then
 	PODMAN_CMD="podman exec -it unifi-os"
 	LEGO_PATH="${UDM_LE_PATH}/lego"
 else 
-	LEGO_CMD="/usr/local/bin/lego"
+	LEGO_CMD="${BINARY_PATH}/lego"
 	PODMAN_CMD=""
 	LEGO_PATH="${UDM_LE_PATH}/.lego"
 	UDM_LEGACY=false
@@ -191,19 +210,23 @@ else
 fi
 
 if [ ! -f "${CRON_FILE}" ]; then
-	echo $CRON_STRING >${CRON_FILE}
+	echo "${CRON_STRING}" > ${CRON_FILE}
 	chmod 644 ${CRON_FILE}
 	${CRON_CMD} reload ${CRON_FILE}
 fi
 
 case $1 in
 initial)
-	# Create lego directory so the container can write to it
-	if [ "$(stat -c '%u:%g' "${LEGO_PATH}")" != "1000:1000" ]; then
-		mkdir "${LEGO_PATH}"
-		chown 1000:1000 "${LEGO_PATH}"
+	if $UDM_LEGACY; then
+		# Create lego directory so the container can write to it
+		if [ "$(stat -c '%u:%g' "${LEGO_PATH}")" != "1000:1000" ]; then
+			mkdir "${LEGO_PATH}"
+			chown 1000:1000 "${LEGO_PATH}"
+		fi
+	else
+		install_binary
+		setup_service
 	fi
-
 	echo 'Attempting initial certificate generation'
 	${LEGO_CMD} ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
 	;;
