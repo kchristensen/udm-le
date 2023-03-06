@@ -5,7 +5,7 @@ set -e
 # Load environment variables
 . /persistent/udm-le/udm-le.env
 # for local dev
-# . ./udm-le.env
+. ./udm-le.env
 
 # Setup variables for later
 DOCKER_VOLUMES="-v ${UDM_LE_PATH}/lego/:/.lego/"
@@ -61,15 +61,9 @@ command_exists() {
   command -v "${1:-}" >/dev/null 2>&1
 }
 
-depends_on() {
-  ! command_exists "${1:-}" && echo "Missing dependencie(s): \`$*\`" 1>&2 && exit 1
-}
-
 install_binary() {
 	# Download and install LEGO binary
 
-	depends_on wget
-	depends_on tar
 	wget --directory-prefix=/tmp ${LEGO_BINARY_URL}
 	# extract only the lego binary file from tarball with "no-same-owner (-o)" 
 	tar -xozf /tmp/${LEGO_BINARY} --directory=${BINARY_PATH} lego
@@ -78,7 +72,6 @@ install_binary() {
 setup_service() {
 	# Setup udm-le-startup.service to ensure udm-le is in cron.d after reboots / updates
 
-	depends_on systemctl
 	systemctl enable ${UDM_LE_PATH}/on_boot.d/udm-le-startup.service	
 }
 
