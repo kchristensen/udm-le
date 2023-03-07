@@ -17,15 +17,15 @@ RESTART_SERVICES=false
 usage() {
 	echo "Usage: udm-le.sh action [ --restart-services ]"
 	echo "Actions:"
-	echo "	- udm-le.sh create_services: force (re-)creates systemd service and timer for automated renewal."
-	echo "	- udm-le.sh initial: Generate new certificate and set up cron job to renew at 03:00 each morning."
-	echo "	- udm-le.sh install_lego: Forcibly reinstalls lego, using LEGO_VERSION from udm-le.env."
-	echo "	- udm-le.sh renew: Renew certificate if due for renewal."
-	echo "	- udm-le.sh update_keystore --restart-services: Update keystore used by Captive Portal/WiFiman"
-	echo "				with either full certificate chain (if NO_BUNDLE='no') or server certificate only (if NO_BUNDLE='yes')."
+	echo "  - udm-le.sh create_services: Force (re-)creates systemd service and timer for automated renewal."
+	echo "  - udm-le.sh initial: Generate new certificate and set up cron job to renew at 03:00 each morning."
+	echo "  - udm-le.sh install_lego: Force (re-)installs lego, using LEGO_VERSION from udm-le.env."
+	echo "  - udm-le.sh renew: Renew certificate if due for renewal."
+	echo "  - udm-le.sh update_keystore: Update keystore used by Captive Portal/WiFiman"
+	echo "              with either full certificate chain (if NO_BUNDLE='no') or server certificate only (if NO_BUNDLE='yes')."
 	echo ""
 	echo "Options:"
-	echo "	--restart-services: [optional] Force restart of services even if certificate was not renewed."
+	echo "  --restart-services: Force restart of services even if certificate was not renewed."
 	echo ""
 	echo "WARNING: NO_BUNDLE option is only supported experimentally. Setting it to 'yes' is required to make WiFiman work,"
 	echo "but may result in some clients not being able to connect to Captive Portal if they do not already have a cached"
@@ -192,6 +192,10 @@ for DOMAIN in $(echo $CERT_HOSTS | tr "," "\n"); do
 done
 
 case $1 in
+create_services)
+	echo "create_services(): Creating services"
+	create_services
+	;;
 initial)
 	install_lego
 	create_services
@@ -200,6 +204,11 @@ initial)
 	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
 	echo "initial(): Starting udm-le systemd timer"
 	systemctl start udm-le.timer
+	;;
+install_lego)
+	echo "install_lego(): Forcing installation of lego"
+	LEGO_FORCE_INSTALL=true
+	install_lego
 	;;
 renew)
 	echo "renew(): Attempting certificate renewal"
@@ -212,16 +221,8 @@ test_deploy)
 	;;
 update_keystore)
 	echo "update_keystore(): Attempting to update keystore used by hotspot Captive Portal and WiFiman"
+	RESTART_SERVICES=true
 	update_keystore && restart_services
-	;;
-install_lego)
-	echo "install_lego(): Forcing installation of lego"
-	LEGO_FORCE_INSTALL=true
-	install_lego
-	;;
-create_services)
-	echo "create_services(): Creating services"
-	create_services
 	;;
 *)
 	echo "ERROR: No valid action provided."
