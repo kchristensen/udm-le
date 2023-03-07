@@ -174,7 +174,7 @@ install_lego() {
 			exit 1
 		fi
 	else
-		echo "install_lego(): lego binary is already installed at ${LEGO_BINARY}, no operation necessary"
+		echo "install_lego(): Lego binary is already installed at ${LEGO_BINARY}, no operation necessary"
 	fi
 }
 
