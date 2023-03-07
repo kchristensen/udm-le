@@ -8,15 +8,8 @@ set -a; source /data/udm-le/udm-le.env; set +a
 
 # Setup additional variables for later
 LEGO_ARGS="--dns ${DNS_PROVIDER} --email ${CERT_EMAIL} --key-type rsa2048"
+LEGO_FORCE_INSTALL=false
 RESTART_SERVICES=false
-
-#check for lego binary
-if [ -f "${LEGO_BINARY}" ]; then
-	:
-else
-	echo "lego binary not found at ${LEGO_BINARY}. Please download the 'linux_arm64' variant from https://github.com/go-acme/lego/releases and place it at expected path."
-	exit 1
-fi
 
 # Show usage
 usage()
@@ -29,6 +22,7 @@ usage()
   echo "	  with either full certificate chain (if NO_BUNDLE='no') or server certificate only (if NO_BUNDLE='yes')."
   echo "	  Requires --restart-services flag. "
   echo "    - udm-le.sh create_services: force (re-)creates systemd service and timer for automated renewal."
+  echo "    - udm-le.sh install_lego: force installs lego, check env file for LEGO_VERSION"
   echo ""
   echo "Options:"
   echo "	--restart-services: [optional] force restart of services even if certificate not renewed."
@@ -138,6 +132,36 @@ create_services() {
 	systemctl enable udm-le.timer
 }
 
+install_lego() {
+    #check if lego exists already, do nothing
+	if [ ! -f "${LEGO_BINARY}" ] || [ "${LEGO_FORCE_INSTALL}" = true ]; then
+		echo "install_lego(): attempting lego installation"
+		
+		#download lego release
+		echo "install_lego(): downloading lego v${LEGO_VERSION} from ${LEGO_DOWNLOAD_URL}"
+		wget -O "/tmp/lego_release-${LEGO_VERSION}.tar.gz" "${LEGO_DOWNLOAD_URL}"
+
+		#extract lego release
+		echo "install_lego(): extracting lego binary from release and placing at ${LEGO_BINARY}"
+		tar -xozvf "/tmp/lego_release-${LEGO_VERSION}.tar.gz" --directory="${UDM_LE_PATH}" lego
+
+		#verify lego binary
+		echo "install_lego(): verifying integrity of lego binary"
+		legohash=$(sha1sum ${LEGO_BINARY} | awk '{print $1}')
+		if [ "${legohash}" = "${LEGO_SHA1}" ]; then
+			echo "install_lego(): verified lego v${LEGO_VERSION}:${LEGO_SHA1}"
+			chmod +x "${LEGO_BINARY}"
+		else
+			echo "install_lego(): verification failure, lego binary sha1 was ${legohash}, expected ${LEGO_SHA1}. cleaning up and aborting"
+			rm -f "${UDM_LE_PATH}/lego"
+			rm -f "/tmp/lego_release-${LEGO_VERSION}.tar.gz"
+			exit 1
+		fi
+	else
+		echo "install_lego(): lego binary is already installed at ${LEGO_BINARY}, no operation necessary"
+	fi
+}
+
 # Support alternative DNS resolvers
 if [ "${DNS_RESOLVERS}" != "" ]; then
 	LEGO_ARGS="${LEGO_ARGS} --dns.resolvers ${DNS_RESOLVERS}"
@@ -153,8 +177,13 @@ done
 
 case $1 in
 initial)
-	echo 'Attempting initial certificate generation'
+	if [ -f "${LEGO_BINARY}" ]; then
+		:
+	else
+		install_lego
+	fi
 	create_services
+	echo 'Attempting initial certificate generation'
 	echo "${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} --accept-tos run"
 	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
 	echo "starting udm-le systemd timer"
@@ -172,6 +201,11 @@ test_deploy)
 update_keystore)
 	echo 'Attempting to update keystore used by hotspot Captive Portal and WiFiman'
 	update_keystore && restart_services
+	;;
+install_lego)
+    echo "Attempting to download and install LEGO v${LEGO_VERSION} from ${LEGO_DOWNLOAD_URL}"
+	LEGO_FORCE_INSTALL=true
+	install_lego
 	;;
 create_services)
     echo 'creating services'
