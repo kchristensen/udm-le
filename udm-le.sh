@@ -125,7 +125,7 @@ update_keystore() {
 
 # create systemd service and timers (for renewal)
 create_services() {
-	echo "creating udm-le systemd service and timer"
+	echo "create_services(): creating udm-le systemd service and timer"
 	cp -f "${UDM_LE_PATH}/resources/systemd/udm-le.service" /etc/systemd/system/udm-le.service
 	cp -f "${UDM_LE_PATH}/resources/systemd/udm-le.timer" /etc/systemd/system/udm-le.timer
 	systemctl daemon-reload
@@ -177,33 +177,29 @@ done
 
 case $1 in
 initial)
-	if [ -f "${LEGO_BINARY}" ]; then
-		:
-	else
-		install_lego
-	fi
+	install_lego
 	create_services
-	echo 'Attempting initial certificate generation'
-	echo "${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} --accept-tos run"
+	echo 'initial(): Attempting certificate generation'
+	echo "initial(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} --accept-tos run"
 	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
-	echo "starting udm-le systemd timer"
+	echo "initial(): starting udm-le systemd timer"
 	systemctl start udm-le.timer
 	;;
 renew)
-	echo 'Attempting certificate renewal'
-	echo "${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} renew --days 60"
+	echo 'renew(): Attempting certificate renewal'
+	echo "renew(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} renew --days 60"
 	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} renew --days 60 && deploy_certs && restart_services
 	;;
 test_deploy)
-	echo 'Attempting to deploy certificate'
+	echo 'test_deploy(): Attempting to deploy certificate'
 	deploy_certs
 	;;
 update_keystore)
-	echo 'Attempting to update keystore used by hotspot Captive Portal and WiFiman'
+	echo 'update_keystore(): Attempting to update keystore used by hotspot Captive Portal and WiFiman'
 	update_keystore && restart_services
 	;;
 install_lego)
-    echo "Attempting to download and install LEGO v${LEGO_VERSION} from ${LEGO_DOWNLOAD_URL}"
+    echo "install_lego(): Forcing installation of lego"
 	LEGO_FORCE_INSTALL=true
 	install_lego
 	;;
