@@ -1,4 +1,4 @@
-# Let's Encrypt for Ubiquiti UbiOS firmwares
+# Let's Encrypt for Ubiquiti UniFi OS
 
 ## Overview
 
@@ -8,7 +8,7 @@ This should work on UniFi Dream Machines running UniFi OS 2.x, including:
 * UniFi Dream Machine Pro
 * UniFi Dream Machine SE
 
-This script supports issuing LetsEncrypt certificates via DNS using [Lego](https://go-acme.github.io/lego/).
+This script supports issuing Let's Encrypt SSL certificates via DNS using [Lego](https://go-acme.github.io/lego/).
 
 Out of the box, it has tested support for select [DNS providers](#dns-providers) but with little work you could get it working with any of the supported [Lego DNS Providers](https://go-acme.github.io/lego/dns/).
 
