@@ -17,16 +17,15 @@ RESTART_SERVICES=false
 usage() {
 	echo "Usage: udm-le.sh action [ --restart-services ]"
 	echo "Actions:"
+	echo "  - udm-le.sh create_services: force (re-)creates systemd service and timer for automated renewal."
 	echo "	- udm-le.sh initial: Generate new certificate and set up cron job to renew at 03:00 each morning."
+	echo "  - udm-le.sh install_lego: Forcibly reinstalls lego, using LEGO_VERSION from udm-le.env."
 	echo "	- udm-le.sh renew: Renew certificate if due for renewal."
 	echo "	- udm-le.sh update_keystore --restart-services: Update keystore used by Captive Portal/WiFiman"
-	echo "	  with either full certificate chain (if NO_BUNDLE='no') or server certificate only (if NO_BUNDLE='yes')."
-	echo "	  Requires --restart-services flag. "
-	echo "    - udm-le.sh create_services: force (re-)creates systemd service and timer for automated renewal."
-	echo "    - udm-le.sh install_lego: force installs lego, check env file for LEGO_VERSION"
+	echo "	  			with either full certificate chain (if NO_BUNDLE='no') or server certificate only (if NO_BUNDLE='yes')."
 	echo ""
 	echo "Options:"
-	echo "	--restart-services: [optional] force restart of services even if certificate was not renewed."
+	echo "	--restart-services: [optional] Force restart of services even if certificate was not renewed."
 	echo ""
 	echo "WARNING: NO_BUNDLE option is only supported experimentally. Setting it to 'yes' is required to make WiFiman work,"
 	echo "but may result in some clients not being able to connect to Captive Portal if they do not already have a cached"
@@ -61,7 +60,7 @@ done
 
 create_services() {
 	# Create systemd service and timers (for renewal)
-	echo "create_services(): creating udm-le systemd service and timer"
+	echo "create_services(): Creating udm-le systemd service and timer"
 	cp -f "${UDM_LE_PATH}/resources/systemd/udm-le.service" /etc/systemd/system/udm-le.service
 	cp -f "${UDM_LE_PATH}/resources/systemd/udm-le.timer" /etc/systemd/system/udm-le.timer
 	systemctl daemon-reload
@@ -74,7 +73,7 @@ deploy_certs() {
 	# Re-write CERT_NAME if it is a wildcard cert. Replace * with _
 	LEGO_CERT_NAME=${CERT_NAME/\*/_}
 	if [ "$(find -L "${UDM_LE_PATH}"/.lego -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
-		echo "New certificate was generated, time to deploy it"
+		echo "deploy_certs(): New certificate was generated, time to deploy it"
 
 		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.crt
 		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
@@ -97,15 +96,15 @@ deploy_certs() {
 restart_services() {
 	# Restart services if certificates have been deployed, or we're forcing it on the command line
 	if [ "${RESTART_SERVICES}" == true ]; then
-		echo "Restarting unifi-core"
+		echo "restart_services(): Restarting unifi-core"
 		systemctl restart unifi-core &>/dev/null
 
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
-			echo "Restarting freeradius server"
+			echo "restart_services(): Restarting freeradius server"
 			systemctl restart freeradius &>/dev/null
 		fi
 	else
-		echo "RESTART_SERVICES is false, skipping service restarts"
+		echo "restart_services(): RESTART_SERVICES is set to false, skipping service restarts"
 	fi
 }
 
@@ -114,7 +113,7 @@ update_keystore() {
 	if [ "$NO_BUNDLE" == "yes" ]; then
 		# Only import server certifcate to keystore. WiFiman requires a single certificate in the .crt file
 		# and does not work if the full chain is imported as this includes the CA intermediate certificates.
-		echo " - Importing server certificate only"
+		echo "update_keystore(): Importing server certificate only"
 
 		# Export only the server certificate from the full chain bundle
 		openssl x509 -in "${UNIFIOS_CERT_PATH}"/unifi-core.crt >"${UNIFIOS_CERT_PATH}"/unifi-core-server-only.crt
@@ -146,7 +145,7 @@ update_keystore() {
 			-srcstoretype PKCS12
 	else
 		# Import full certificate chain bundle to keystore
-		echo " - Importing full certificate chain bundle"
+		echo "update_keystore(): Importing full certificate chain bundle"
 		${CERT_IMPORT_CMD} "${UNIFIOS_CERT_PATH}/unifi-core.key" "${UNIFIOS_CERT_PATH}/unifi-core.crt"
 	fi
 }
@@ -158,7 +157,7 @@ install_lego() {
 
 		# Download and extract lego release
 		echo "install_lego(): Downloading lego v${LEGO_VERSION} from ${LEGO_DOWNLOAD_URL}"
-		wget -O "/tmp/lego_release-${LEGO_VERSION}.tar.gz" "${LEGO_DOWNLOAD_URL}"
+		wget -qO "/tmp/lego_release-${LEGO_VERSION}.tar.gz" "${LEGO_DOWNLOAD_URL}"
 
 		echo "install_lego(): Extracting lego binary from release and placing at ${LEGO_BINARY}"
 		tar -xozvf "/tmp/lego_release-${LEGO_VERSION}.tar.gz" --directory="${UDM_LE_PATH}" lego
@@ -197,15 +196,15 @@ initial)
 	install_lego
 	create_services
 	echo "initial(): Attempting certificate generation"
-	echo "initial(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" \"${LEGO_ARGS}\" --accept-tos run"
-	${LEGO_BINARY} --path "${LEGO_PATH}" "${LEGO_ARGS}" --accept-tos run && deploy_certs && restart_services
+	echo "initial(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} --accept-tos run"
+	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
 	echo "initial(): Starting udm-le systemd timer"
 	systemctl start udm-le.timer
 	;;
 renew)
 	echo "renew(): Attempting certificate renewal"
-	echo "renew(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" \"${LEGO_ARGS}\" renew --days 60"
-	${LEGO_BINARY} --path "${LEGO_PATH}" "${LEGO_ARGS}" renew --days 60 && deploy_certs && restart_services
+	echo "renew(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} renew --days 60"
+	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} renew --days 60 && deploy_certs && restart_services
 	;;
 test_deploy)
 	echo "test_deploy(): Attempting to deploy certificate"
