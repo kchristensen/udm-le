@@ -15,8 +15,9 @@ Out of the box, it has tested support for select [DNS providers](#dns-providers)
 ## Installation
 
 1. Copy the contents of this repo to your device at `/data/udm-le`.
-2. Edit `/data/udm-le.env` and tweak variables to meet your needs.
-3. Run `/data/udm-le/udm-le.sh initial`. This will handle your initial certificate generation and setup a systemd service to start the service on boot, as well as a systemd timer to attempt certificate renewal each morning between 0300 and 0305.
+2. Edit `/data/udm-le/udm-le.env` and tweak variables to meet your needs.
+3. If necessary, create and populate the `/data/udm-le/.secrets` directory with the files required by your DNS provider.
+4. Run `/data/udm-le/udm-le.sh initial`. This will handle your initial certificate generation and setup a systemd service to start the service on boot, as well as a systemd timer to attempt certificate renewal each morning between 0300 and 0305.
 
 ## DNS Providers
 
