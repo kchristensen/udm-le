@@ -1,0 +1,8 @@
+[Unit]
+Description=Lets Encrypt certificate renewal
+[Service]
+Type=oneshot
+RemainAfterExit=false
+TimeoutSec=15m
+WorkingDirectory=/data/udm-le
+ExecStart=/data/udm-le/udm-le.sh renew
