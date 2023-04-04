@@ -7,6 +7,7 @@ This should work on UniFi Dream Machines running UniFi OS 2.x+, including:
 * UniFi Dream Machine
 * UniFi Dream Machine Pro
 * UniFi Dream Machine SE
+* UniFi Dream Wall
 
 This script supports issuing Let's Encrypt SSL certificates via DNS using [Lego](https://go-acme.github.io/lego/).
 
@@ -32,10 +33,10 @@ If not done already, [delegate a domain to an Azure DNS zone](https://docs.micro
 Assuming the DNS zone lives in subscription `00000000-0000-0000-0000-000000000000` and resource group `udm-le`, with help of the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/) provision an identity to manage the DNS zone by running:
 
 ```bash
-# login
+# Login
 az login
 
-# create a service principal with contributor (default) permissions over the godns resource group
+# Create a service principal with contributor (default) permissions over the godns resource group
 az ad sp create-for-rbac --name godns --scope /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/udm-le --role contributor
 ```
 
@@ -108,4 +109,4 @@ ocid1.compartment.oc1..secret
 
 If you use Zonomi as your DNS provider, set your `DNS_PROVIDER` to `zonomi` and configure your `ZONOMI_API_KEY`.
 
-The API key can be obtained [in your control panel](https://zonomi.com/app/cp/apikeys.jsp) under the dns key type.
+The API key can be obtained [in your control panel](https://zonomi.com/app/cp/apikeys.jsp) under the DNS key type.
