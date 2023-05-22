@@ -74,7 +74,7 @@ Note:
 
 ### Google Domains
 
-If you use Google Domains as your DNS provider, set the `DNS_PROVIDER` to `googledomains` and configure `GOOGLE_DOMAINS_ACCESS_TOKEN` with your access token. You can create an access token in your Google Domains dashboard under YOUR_DOMAIN > Security > ACME DNS API. 
+If you use Google Domains as your DNS provider, set the `DNS_PROVIDER` to `googledomains` and configure `GOOGLE_DOMAINS_ACCESS_TOKEN` with your access token. You can create an access token in your Google Domains dashboard under YOUR_DOMAIN > Security > ACME DNS API.
 
 ### Linode DNS
 
