@@ -24,7 +24,7 @@ Out of the box, it has tested support for select [DNS providers](#dns-providers)
 
 ### AWS Route53
 
-AWS Route53 DNS challenge can use configuration and authentication values easily through shared credentials and configuration files [as described here](https://go-acme.github.io/lego/dns/route53/). This script will check for and include these files during the initial certificate generation and subsequent renewals. Ensure that `route53` is set for `DNS_PROVIDER` in `udm-le.env`, create a new directory called `.secrets` in `/data/udm-le` and add `credentials` and `config` files as required for your authentication. See the [AWS CLI Documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) for more information. Currently only the `default` profile is supported.
+If you use Amazon Route53 as your DNS provider, set the `DNS_PROVIDER` to `route53` and configure variables in `udm-le.env` that start with `AWS_`.
 
 ### Azure DNS
 
