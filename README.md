@@ -2,12 +2,14 @@
 
 ## Overview
 
-This should work on UniFi Dream Machines running UniFi OS 2.x+, including:
+This should work on UniFi devices running UniFi OS 2.x+, including:
 
 * UniFi Dream Machine
 * UniFi Dream Machine Pro
 * UniFi Dream Machine SE
 * UniFi Dream Wall
+* UniFi Network Video Recorder
+* UniFi Network Video Recorder Professional
 
 This script supports issuing Let's Encrypt SSL certificates via DNS using [Lego](https://go-acme.github.io/lego/).
 
