@@ -22,6 +22,22 @@ Out of the box, it has tested support for select [DNS providers](#dns-providers)
 3. If necessary, create and populate the `/data/udm-le/.secrets` directory with the files required by your DNS provider.
 4. Run `/data/udm-le/udm-le.sh initial`. This will handle your initial certificate generation and setup a systemd service to start the service on boot, as well as a systemd timer to attempt certificate renewal each morning between 0300 and 0305.
 
+## Uninstallation
+
+```bash
+# Disable udm-le from running at boot
+systemctl disable udm-le
+
+# Delete any udm-le related data
+rm -rf /data/udm-le /mnt/data/udm-le
+rm -f /etc/systemd/system/udm-le.*
+
+# Delete any generated certificates, and restart services to generate new self-signed certificates
+rm -f /data/unifi-core/config/*.crt /data/unifi-core/config/*.key /data/unifi-core/config/*.pem
+systemctl restart unifi-core
+systemctl restart freeradius
+```
+
 ## DNS Providers
 
 ### AWS Route53
