@@ -1,6 +1,7 @@
 [Unit]
 Description=Lets Encrypt certificate renewal
 [Service]
+Environment=HOME=/root
 Type=oneshot
 RemainAfterExit=false
 TimeoutSec=15m
