@@ -9,6 +9,7 @@ This should work on UniFi devices running UniFi OS 2.x+, including:
 * UniFi Dream Machine SE
 * UniFi Dream Router
 * UniFi Dream Wall
+* UniFi Express
 * UniFi Network Video Recorder
 * UniFi Network Video Recorder Professional
 
