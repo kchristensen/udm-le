@@ -100,6 +100,15 @@ If you use Google Domains as your DNS provider, set the `DNS_PROVIDER` to `googl
 
 If you use Linode as your DNS provider, set your `DNS_PROVIDER` to `linode` and configure `LINODE_TOKEN` with the value of an API token. The API token must have a scope which allows Read/Write access to "Domains". API tokens can be created in the Linode Control panel.
 
+### Loopia
+
+If you use Loopia as your DNS provider, set your `DNS_PROVIDER` to `loopia` and configure `LOOPIA_API_USER` and `LOOPIA_API_PASSWORD`. The API user must be created at the [loopia customer zone](https://customerzone.loopia.com/api) with the following privileges:
+
+* addZoneRecord
+* getZoneRecords
+* removeZoneRecord
+* removeSubdomain
+
 ### Name.com
 
 Follow [these instructions](https://www.name.com/support/articles/360007597874-signing-up-for-api-access) from name.com support to enable api access.
