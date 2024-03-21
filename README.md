@@ -2,7 +2,7 @@
 
 ## Overview
 
-This should work on UniFi devices running UniFi OS 2.x+, including:
+This should work on UniFi devices running UniFi OS 2.x or later, including:
 
 * UniFi Dream Machine
 * UniFi Dream Machine Pro
