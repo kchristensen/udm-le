@@ -212,8 +212,8 @@ install_lego)
 	;;
 renew)
 	echo "renew(): Attempting certificate renewal"
-	echo "renew(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} renew --days 60"
-	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} renew --days 60 && deploy_certs && restart_services
+	echo "renew(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} renew --days ${CERT_DAYS_BEFORE_RENEWAL:-30}"
+	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} renew --days ${CERT_DAYS_BEFORE_RENEWAL:-30} && deploy_certs && restart_services
 	;;
 test_deploy)
 	echo "test_deploy(): Attempting to deploy certificate"
