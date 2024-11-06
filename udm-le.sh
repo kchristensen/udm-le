@@ -99,6 +99,11 @@ restart_services() {
 		echo "restart_services(): Restarting unifi-core"
 		systemctl restart unifi-core &>/dev/null
 
+		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
+	  		echo "restart_services(): Restarting unifi"
+			systemctl restart unifi &>/dev/null
+   		fi
+
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
 			echo "restart_services(): Restarting freeradius server"
 			systemctl restart freeradius &>/dev/null
