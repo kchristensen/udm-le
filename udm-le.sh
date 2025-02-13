@@ -115,7 +115,7 @@ restart_services() {
 		systemctl restart unifi-core &>/dev/null
 
 		if [ "$RESTART_NGINX" == "yes" ]; then
-		    echo "restart_services(): Restarting nginx"
+		    echo "restart_services(): Reloading nginx"
 		    systemctl reload nginx &>/dev/null
 		fi
 
