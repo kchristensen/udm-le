@@ -13,12 +13,6 @@ LEGO_ARGS="--dns ${DNS_PROVIDER} --dns.resolvers ${DNS_RESOLVER} --email ${CERT_
 LEGO_FORCE_INSTALL=false
 RESTART_SERVICES=false
 
-# If the EUS cert directory exists, assume we need to
-# restart nginx along with the other services
-if [ -d ${UNIFIEUS_CERT_PATH} ]; then
-	RESTART_NGINX=yes
-fi
-
 # Show usage
 usage() {
 	echo "Usage: udm-le.sh action [ --restart-services ]"
@@ -85,15 +79,6 @@ deploy_certs() {
 		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
 		chmod 644 "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.crt "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
 
-		# Copy certs to the EUS directory. Based on the config
-		# at unifi-core/config/http/local-certs.conf
-		if [ "$RESTART_NGINX" == "yes" ]; then
-		    echo "Copying certs to ${UNIFIEUS_CERT_PATH} for nginx"
-		    cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UNIFIEUS_CERT_PATH}"/unifi-os.crt
-		    cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UNIFIEUS_CERT_PATH}"/unifi-os.key
-		    chmod 644 "${UNIFIEUS_CERT_PATH}"/unifi-os.crt "${UNIFIEUS_CERT_PATH}"/unifi-os.key
-		fi
-
 		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
 			update_keystore
 		fi
@@ -113,11 +98,6 @@ restart_services() {
 	if [ "${RESTART_SERVICES}" == true ]; then
 		echo "restart_services(): Restarting unifi-core"
 		systemctl restart unifi-core &>/dev/null
-
-		if [ "$RESTART_NGINX" == "yes" ]; then
-		    echo "restart_services(): Reloading nginx"
-		    systemctl reload nginx &>/dev/null
-		fi
 
 		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
 	  		echo "restart_services(): Restarting unifi"
