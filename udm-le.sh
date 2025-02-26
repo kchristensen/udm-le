@@ -9,7 +9,7 @@ source /data/udm-le/udm-le.env
 set +a
 
 # Setup additional variables for later
-LEGO_ARGS="--dns ${DNS_PROVIDER} --dns.resolvers ${DNS_RESOLVER} --email ${CERT_EMAIL} --key-type ${KEY_TYPE:-ec256}"
+LEGO_ARGS="--dns ${DNS_PROVIDER} --dns.resolvers ${DNS_RESOLVER} --email ${CERT_EMAIL} --key-type ${KEY_TYPE:-RSA2048}"
 LEGO_FORCE_INSTALL=false
 RESTART_SERVICES=false
 
