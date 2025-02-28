@@ -11,6 +11,7 @@ set +a
 # Setup additional variables for later
 LEGO_ARGS="--dns ${DNS_PROVIDER} --dns.resolvers ${DNS_RESOLVER} --email ${CERT_EMAIL} --key-type ${KEY_TYPE:-RSA2048}"
 LEGO_FORCE_INSTALL=false
+JAVA_FORCE_INSTALL=false
 RESTART_SERVICES=false
 
 # Show usage
@@ -183,6 +184,18 @@ install_lego() {
 	fi
 }
 
+install_java() {
+	# Check if lego exists already, do nothing
+	if [ ! -f "${JAVA_BINARY}" ] || [ "${JAVA_FORCE_INSTALL}" = true ]; then
+		echo "install_java(): Attempting java installation"
+
+		# install jre via apt
+		apt install default-jre-headless
+	else
+		echo "install_java(): Java binary is already installed at ${JAVA_BINARY}, no operation necessary"
+	fi
+}
+
 # Support alternative DNS resolvers
 if [ "${DNS_RESOLVERS}" != "" ]; then
 	LEGO_ARGS="${LEGO_ARGS} --dns.resolvers ${DNS_RESOLVERS}"
@@ -203,6 +216,7 @@ create_services)
 	;;
 initial)
 	install_lego
+	install_java
 	create_services
 	echo "initial(): Attempting certificate generation"
 	echo "initial(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} --accept-tos run"
@@ -214,6 +228,11 @@ install_lego)
 	echo "install_lego(): Forcing installation of lego"
 	LEGO_FORCE_INSTALL=true
 	install_lego
+	;;
+install_java)
+	echo "install_java(): Forcing installation of java"
+	JAVA_FORCE_INSTALL=true
+	install_java
 	;;
 renew)
 	echo "renew(): Attempting certificate renewal"
