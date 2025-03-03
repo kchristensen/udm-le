@@ -87,7 +87,7 @@ deploy_certs() {
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
 			cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UBIOS_RADIUS_CERT_PATH}"/server.pem
 			cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UBIOS_RADIUS_CERT_PATH}"/server-key.pem
-			chmod 600 "${UBIOS_RADIUS_CERT_PATH}"/server.pem "${UBIOS_RADIUS_CERT_PATH}"/server-key.pem
+			chmod 644 "${UBIOS_RADIUS_CERT_PATH}"/server.pem "${UBIOS_RADIUS_CERT_PATH}"/server-key.pem
 		fi
 
 		RESTART_SERVICES=true
@@ -107,7 +107,7 @@ restart_services() {
 
 		if [ "$ENABLE_RADIUS" == "yes" ]; then
 			echo "restart_services(): Restarting freeradius server"
-			systemctl restart freeradius &>/dev/null
+			pkill -f freeradius &>/dev/null
 		fi
 	else
 		echo "restart_services(): RESTART_SERVICES is set to false, skipping service restarts"
@@ -152,7 +152,32 @@ update_keystore() {
 	else
 		# Import full certificate chain bundle to keystore
 		echo "update_keystore(): Importing full certificate chain bundle"
-		${CERT_IMPORT_CMD} "${UNIFIOS_CERT_PATH}/unifi-core.key" "${UNIFIOS_CERT_PATH}/unifi-core.crt"
+
+		# Bundle the private key and server-only certificate into a PKCS12 format file
+		openssl pkcs12 \
+			-export \
+			-in "${UNIFIOS_CERT_PATH}"/unifi-core-.crt \
+			-name "${UNIFIOS_KEYSTORE_CERT_ALIAS}" \
+			-out "${UNIFIOS_KEYSTORE_PATH}"/unifi-core-key-plus-server-full-cert.p12 \
+			-password pass:"${UNIFIOS_KEYSTORE_PASSWORD}"
+
+		# Backup the keystore before editing it.
+		cp "${UNIFIOS_KEYSTORE_PATH}/keystore" "${UNIFIOS_KEYSTORE_PATH}/keystore_$(date +"%Y-%m-%d_%Hh%Mm%Ss").backup"
+
+		# Delete the existing full chain from the keystore
+		keytool -delete -alias unifi -keystore "${UNIFIOS_KEYSTORE_PATH}/keystore" -deststorepass "${UNIFIOS_KEYSTORE_PASSWORD}"
+
+		# Import the server-only certificate and private key from the PKCS12 file
+		keytool -importkeystore \
+			-alias "${UNIFIOS_KEYSTORE_CERT_ALIAS}" \
+			-destkeypass "${UNIFIOS_KEYSTORE_PASSWORD}" \
+			-destkeystore "${UNIFIOS_KEYSTORE_PATH}/keystore" \
+			-deststorepass "${UNIFIOS_KEYSTORE_PASSWORD}" \
+			-noprompt \
+			-srckeystore "${UNIFIOS_KEYSTORE_PATH}/unifi-core-key-plus-server-full-cert.p12" \
+			-srcstorepass "${UNIFIOS_KEYSTORE_PASSWORD}" \
+			-srcstoretype PKCS12
+
 	fi
 }
 
