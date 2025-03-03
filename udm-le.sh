@@ -11,6 +11,7 @@ set +a
 # Setup additional variables for later
 LEGO_ARGS="--dns ${DNS_PROVIDER} --dns.resolvers ${DNS_RESOLVER} --email ${CERT_EMAIL} --key-type ${KEY_TYPE:-RSA2048}"
 LEGO_FORCE_INSTALL=false
+JAVA_FORCE_INSTALL=false
 RESTART_SERVICES=false
 
 # Show usage
@@ -183,13 +184,31 @@ install_lego() {
 	fi
 }
 
+install_java() {
+	# We only need java if captive portal is enabled
+	if [ "${ENABLE_CAPTIVE}" != "yes" ]; then 
+		echo "install_java(): ENABLE_CAPTIVE is set to '${ENABLE_CAPTIVE}', no Java required"
+		return
+	fi
+	
+	# Check if java exists already, do nothing
+	if [ ! -f "${JAVA_BINARY}" ] || [ "${JAVA_FORCE_INSTALL}" = true ]; then
+		echo "install_java(): Attempting Java installation"
+
+		# install jre via apt
+		apt install -y --no-install-recommends default-jre-headless
+	else
+		echo "install_java(): Java binary is already installed at ${JAVA_BINARY}, no operation necessary"
+	fi
+}
+
 # Support alternative DNS resolvers
 if [ "${DNS_RESOLVERS}" != "" ]; then
 	LEGO_ARGS="${LEGO_ARGS} --dns.resolvers ${DNS_RESOLVERS}"
 fi
 
 # Support multiple certificate SANs
-for DOMAIN in $(echo $CERT_HOSTS | tr "," "\n"); do
+for DOMAIN in $(echo "$CERT_HOSTS" | tr "," "\n"); do
 	if [ -z "$CERT_NAME" ]; then
 		CERT_NAME=$DOMAIN
 	fi
@@ -203,10 +222,11 @@ create_services)
 	;;
 initial)
 	install_lego
+	install_java
 	create_services
 	echo "initial(): Attempting certificate generation"
 	echo "initial(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} --accept-tos run"
-	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
+	${LEGO_BINARY} --path "${LEGO_PATH}" "${LEGO_ARGS}" --accept-tos run && deploy_certs && restart_services
 	echo "initial(): Starting udm-le systemd timer"
 	systemctl start udm-le.timer
 	;;
@@ -215,10 +235,15 @@ install_lego)
 	LEGO_FORCE_INSTALL=true
 	install_lego
 	;;
+install_java)
+	echo "install_java(): Forcing installation of java"
+	JAVA_FORCE_INSTALL=true
+	install_java
+	;;
 renew)
 	echo "renew(): Attempting certificate renewal"
 	echo "renew(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} renew --days ${CERT_DAYS_BEFORE_RENEWAL:-30}"
-	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} renew --days ${CERT_DAYS_BEFORE_RENEWAL:-30} && deploy_certs && restart_services
+	${LEGO_BINARY} --path "${LEGO_PATH}" "${LEGO_ARGS}" renew --days "${CERT_DAYS_BEFORE_RENEWAL:-30}" && deploy_certs && restart_services
 	;;
 test_deploy)
 	echo "test_deploy(): Attempting to deploy certificate"
