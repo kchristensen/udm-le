@@ -190,7 +190,7 @@ install_java() {
 		echo "install_java(): Attempting java installation"
 
 		# install jre via apt
-		apt install default-jre-headless
+		apt install -y --no-install-recommends default-jre-headless
 	else
 		echo "install_java(): Java binary is already installed at ${JAVA_BINARY}, no operation necessary"
 	fi
@@ -202,7 +202,7 @@ if [ "${DNS_RESOLVERS}" != "" ]; then
 fi
 
 # Support multiple certificate SANs
-for DOMAIN in $(echo $CERT_HOSTS | tr "," "\n"); do
+for DOMAIN in $(echo "$CERT_HOSTS" | tr "," "\n"); do
 	if [ -z "$CERT_NAME" ]; then
 		CERT_NAME=$DOMAIN
 	fi
@@ -220,7 +220,7 @@ initial)
 	create_services
 	echo "initial(): Attempting certificate generation"
 	echo "initial(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} --accept-tos run"
-	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
+	${LEGO_BINARY} --path "${LEGO_PATH}" "${LEGO_ARGS}" --accept-tos run && deploy_certs && restart_services
 	echo "initial(): Starting udm-le systemd timer"
 	systemctl start udm-le.timer
 	;;
@@ -237,7 +237,7 @@ install_java)
 renew)
 	echo "renew(): Attempting certificate renewal"
 	echo "renew(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} renew --days ${CERT_DAYS_BEFORE_RENEWAL:-30}"
-	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} renew --days ${CERT_DAYS_BEFORE_RENEWAL:-30} && deploy_certs && restart_services
+	${LEGO_BINARY} --path "${LEGO_PATH}" "${LEGO_ARGS}" renew --days "${CERT_DAYS_BEFORE_RENEWAL:-30}" && deploy_certs && restart_services
 	;;
 test_deploy)
 	echo "test_deploy(): Attempting to deploy certificate"
