@@ -185,9 +185,15 @@ install_lego() {
 }
 
 install_java() {
-	# Check if lego exists already, do nothing
+	# We only need java if captive portal is enabled
+	if [ "${ENABLE_CAPTIVE}" != "yes" ]; then 
+		echo "install_java(): ENABLE_CAPTIVE is set to '${ENABLE_CAPTIVE}', no Java required"
+		return
+	fi
+	
+	# Check if java exists already, do nothing
 	if [ ! -f "${JAVA_BINARY}" ] || [ "${JAVA_FORCE_INSTALL}" = true ]; then
-		echo "install_java(): Attempting java installation"
+		echo "install_java(): Attempting Java installation"
 
 		# install jre via apt
 		apt install -y --no-install-recommends default-jre-headless
