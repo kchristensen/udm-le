@@ -79,7 +79,7 @@ If you use DuckDNS as your DNS provider, set your `DNS_PROVIDER` to `duckdns` an
 
 ### Gandi Live DNS (v5)
 
-If you use Gandi Live DNS (v5) as your DNS provider, set your `DNS_PROVIDER` to `gandiv5` and configure your `GANDIV5_API_KEY`. You can obtain your API key at your [account settings](https://account.gandi.net/).
+If you use Gandi Live DNS (v5) as your DNS provider, set your `DNS_PROVIDER` to `gandiv5` and configure your `GANDIV5_PERSONAL_ACCESS_TOKEN`. You can obtain your Personal Access Token (PAT) from your [account settings](https://account.gandi.net/).
 
 ### Google Cloud DNS
 
