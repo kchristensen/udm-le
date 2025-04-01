@@ -3,6 +3,11 @@
 # Set error mode
 set -e
 
+# Ensure permissions on udm-le.env are sane
+if [ $(stat --printf "%04a" /data/udm-le/udm-le.env) != "0600" ]; then
+  chmod 0600 udm-le.env
+fi
+
 # Load environment variables
 set -a
 source /data/udm-le/udm-le.env
