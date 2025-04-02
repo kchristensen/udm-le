@@ -161,7 +161,8 @@ update_keystore() {
 		# Bundle the private key and server-only certificate into a PKCS12 format file
 		openssl pkcs12 \
 			-export \
-			-in "${UNIFIOS_CERT_PATH}"/unifi-core-.crt \
+			-in "${UNIFIOS_CERT_PATH}"/unifi-core.crt \
+			-inkey "${UNIFIOS_CERT_PATH}"/unifi-core.key \
 			-name "${UNIFIOS_KEYSTORE_CERT_ALIAS}" \
 			-out "${UNIFIOS_KEYSTORE_PATH}"/unifi-core-key-plus-server-full-cert.p12 \
 			-password pass:"${UNIFIOS_KEYSTORE_PASSWORD}"
