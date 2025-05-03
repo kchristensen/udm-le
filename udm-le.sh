@@ -85,6 +85,12 @@ deploy_certs() {
 		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
 		chmod 644 "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.crt "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
 
+		if [ "$ENABLE_EUS_CERTS" == "yes" ]; then
+			cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.crt
+			cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.key
+			chmod 644 "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.crt "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.key
+		fi
+	
 		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
 			update_keystore
 		fi
