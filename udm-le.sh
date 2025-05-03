@@ -29,6 +29,7 @@ usage() {
 	echo "  - udm-le.sh renew: Renew certificate if due for renewal."
 	echo "  - udm-le.sh update_keystore: Update keystore used by Captive Portal/WiFiman"
 	echo "              with either full certificate chain (if NO_BUNDLE='no') or server certificate only (if NO_BUNDLE='yes')."
+	echo "  - udm-le.sh force_deploy_certs: Force deploy certificates even if they have not been updated."
 	echo ""
 	echo "Options:"
 	echo "  --restart-services: Force restart of services even if certificate was not renewed."
@@ -73,35 +74,44 @@ create_services() {
 	systemctl enable udm-le.timer
 }
 
+deploy_certs_if_updated() {
+	# Deploy certificates for the controller if they have been updated in the last 5 minutes
+	# and optionally for the captive portal and radius server
+
+	# Re-write CERT_NAME if it is a wildcard cert. Replace * with _
+	LEGO_CERT_NAME=${CERT_NAME/\*/_}
+	if [ "$(find -L "${UDM_LE_PATH}"/.lego -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
+    	echo "deploy_certs_if_updated(): New certificate was generated, time to deploy it"
+		deploy_certs
+		RESTART_SERVICES=true
+	fi
+}
+
 deploy_certs() {
 	# Deploy certificates for the controller and optionally for the captive portal and radius server
 
 	# Re-write CERT_NAME if it is a wildcard cert. Replace * with _
 	LEGO_CERT_NAME=${CERT_NAME/\*/_}
-	if [ "$(find -L "${UDM_LE_PATH}"/.lego -type f -name "${LEGO_CERT_NAME}".crt -mmin -5)" ]; then
-		echo "deploy_certs(): New certificate was generated, time to deploy it"
+	echo "deploy_certs(): Deploying certificate"
 
-		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.crt
-		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
-		chmod 644 "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.crt "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
+	cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.crt
+	cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
+	chmod 644 "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.crt "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
 
-		if [ "$ENABLE_EUS_CERTS" == "yes" ]; then
-			cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.crt
-			cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.key
-			chmod 644 "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.crt "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.key
-		fi
-	
-		if [ "$ENABLE_CAPTIVE" == "yes" ]; then
-			update_keystore
-		fi
+	if [ "$ENABLE_EUS_CERTS" == "yes" ]; then
+		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.crt
+		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.key
+		chmod 644 "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.crt "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.key
+	fi
 
-		if [ "$ENABLE_RADIUS" == "yes" ]; then
-			cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UBIOS_RADIUS_CERT_PATH}"/server.pem
-			cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UBIOS_RADIUS_CERT_PATH}"/server-key.pem
-			chmod 644 "${UBIOS_RADIUS_CERT_PATH}"/server.pem "${UBIOS_RADIUS_CERT_PATH}"/server-key.pem
-		fi
+	if [ "$ENABLE_CAPTIVE" == "yes" ]; then
+		update_keystore
+	fi
 
-		RESTART_SERVICES=true
+	if [ "$ENABLE_RADIUS" == "yes" ]; then
+		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UBIOS_RADIUS_CERT_PATH}"/server.pem
+		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UBIOS_RADIUS_CERT_PATH}"/server-key.pem
+		chmod 644 "${UBIOS_RADIUS_CERT_PATH}"/server.pem "${UBIOS_RADIUS_CERT_PATH}"/server-key.pem
 	fi
 }
 
@@ -263,7 +273,7 @@ initial)
 	create_services
 	echo "initial(): Attempting certificate generation"
 	echo "initial(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} --accept-tos run"
-	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} --accept-tos run && deploy_certs && restart_services
+	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} --accept-tos run && deploy_certs_if_updated && restart_services
 	echo "initial(): Starting udm-le systemd timer"
 	systemctl start udm-le.timer
 	;;
@@ -280,11 +290,16 @@ install_java)
 renew)
 	echo "renew(): Attempting certificate renewal"
 	echo "renew(): ${LEGO_BINARY} --path \"${LEGO_PATH}\" ${LEGO_ARGS} renew --days ${CERT_DAYS_BEFORE_RENEWAL:-30}"
-	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} renew --days "${CERT_DAYS_BEFORE_RENEWAL:-30}" && deploy_certs && restart_services
+	${LEGO_BINARY} --path "${LEGO_PATH}" ${LEGO_ARGS} renew --days "${CERT_DAYS_BEFORE_RENEWAL:-30}" && deploy_certs_if_updated && restart_services
 	;;
 test_deploy)
 	echo "test_deploy(): Attempting to deploy certificate"
 	deploy_certs
+	;;
+force_deploy_certs)
+	echo "force_deploy_certs(): Attempting to deploy certificate"
+	RESTART_SERVICES=true
+	deploy_certs && restart_services
 	;;
 update_keystore)
 	echo "update_keystore(): Attempting to update keystore used by hotspot Captive Portal and WiFiman"
