@@ -12,6 +12,7 @@ This should work on UniFi devices running UniFi OS 2.x or later, including:
 * UniFi Express
 * UniFi Network Video Recorder
 * UniFi Network Video Recorder Professional
+* UniFi Enterprise Fortress Gateway
 
 This script supports issuing Let's Encrypt SSL certificates via DNS using [Lego](https://go-acme.github.io/lego/).
 
