@@ -12,6 +12,7 @@ This should work on UniFi devices running UniFi OS 2.x or later, including:
 * UniFi Express
 * UniFi Network Video Recorder
 * UniFi Network Video Recorder Professional
+* UniFi UNAS Pro
 
 This script supports issuing Let's Encrypt SSL certificates via DNS using [Lego](https://go-acme.github.io/lego/).
 
@@ -21,6 +22,7 @@ Out of the box, it has tested support for select [DNS providers](#dns-providers)
 
 1. Copy the contents of this repo to your device at `/data/udm-le`.
 2. Edit `/data/udm-le/udm-le.env` and tweak variables to meet your needs.
+   - On UniFi UNAS Pro, change DNS Resolver to: `DNS_RESOLVER="127.0.0.53:53"`
 3. If necessary, create and populate the `/data/udm-le/.secrets` directory with the files required by your DNS provider.
 4. Run `/data/udm-le/udm-le.sh initial`. This will handle your initial certificate generation and setup a systemd service to start the service on boot, as well as a systemd timer to attempt certificate renewal each morning between 0300 and 0305.
 
