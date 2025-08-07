@@ -99,6 +99,10 @@ deploy_certs() {
 	chmod 644 "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.crt "${UBIOS_CONTROLLER_CERT_PATH}"/unifi-core.key
 
 	if [ "$ENABLE_EUS_CERTS" == "yes" ]; then
+		# If a user has never tried to upload a certificate via the web interface this directory will not exist.
+		if [ ! -d "${UNIFIOS_EUS_CERT_PATH}" ]; then
+			mkdir -p "${UNIFIOS_EUS_CERT_PATH}"
+		fi
 		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".crt "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.crt
 		cp -f "${UDM_LE_PATH}"/.lego/certificates/"${LEGO_CERT_NAME}".key "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.key
 		chmod 644 "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.crt "${UNIFIOS_EUS_CERT_PATH}"/unifi-os.key
