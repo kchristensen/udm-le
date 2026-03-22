@@ -253,6 +253,28 @@ install_java() {
 	fi
 }
 
+disable_ipv6() {
+    if [ "$DISABLE_IPV6" == "yes" ]; then
+        echo "disable_ipv6() : Attempting to disable IPv6"
+        # Disable IPv6 on all interfaces
+        sysctl -w net.ipv6.conf.all.disable_ipv6=1
+        sysctl -w net.ipv6.conf.default.disable_ipv6=1
+        # Note: We skip 'lo' (loopback) to avoid potential internal issues, but 'all' and 'default' should be sufficient.
+    fi
+}
+
+enable_ipv6() {
+    if [ "$DISABLE_IPV6" == "yes" ]; then
+    # Enable IPv6 on all interfaces
+    echo "enable_ipv6() : Attempting to enable IPv6"
+    echo "You can check if IPv6 is active again with sysctl -w net.ipv6.conf.all.disable_ipv6 it should retrun 0"
+    sysctl -w net.ipv6.conf.all.disable_ipv6=0
+    sysctl -w net.ipv6.conf.default.disable_ipv6=0
+    # Note: We skip 'lo' (loopback) to avoid potential internal issues, but 'all' and 'default' should be sufficient.
+    fi
+}
+
+
 # Support alternative DNS resolvers
 if [ "${DNS_RESOLVERS}" != "" ]; then
 	LEGO_ARGS="${LEGO_ARGS} --dns.resolvers ${DNS_RESOLVERS}"
