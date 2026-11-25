@@ -79,6 +79,16 @@ az login
 az ad sp create-for-rbac --name godns --scope /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/udm-le --role contributor
 ```
 
+The CLI will output a JSON object. Use this output to initialize your configuration in [udm-le.env](./udm-le.env).
+
+Note:
+
+* The `appId` value is what [Lego](https://go-acme.github.io/lego/) calls a client id
+* The `password` value is a secret and as such you may want to omit it from [udm-le.env](./udm-le.env) and instead set it in a `.secrets/client-secret.txt` file
+* The `tenant` value is your `AZURE_TENANT_ID`
+
+Set `DNS_PROVIDER` to `azuredns`. Lego's older `azure` provider is deprecated and will be removed in a future release. If you are upgrading from an older `udm-le.env` that uses `DNS_PROVIDER="azure"`, change it to `azuredns` and add `AZURE_AUTH_METHOD="env"`. This makes lego authenticate with the `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` (or `AZURE_CLIENT_SECRET_FILE`), and `AZURE_TENANT_ID` values you configured. See the [azuredns provider documentation](https://go-acme.github.io/lego/dns/azuredns/) for other authentication methods.
+
 ### Cloudflare
 
 In your Cloudflare account settings, create an API token with the following permissions:
@@ -103,13 +113,6 @@ If you use Gandi Live DNS (v5) as your DNS provider, set your `DNS_PROVIDER` to 
 ### Google Cloud DNS
 
 GCP Cloud DNS can be configured by establishing a service account with the role [`roles/dns.admin`](https://cloud.google.com/iam/docs/understanding-roles#dns-roles) and exporting a [service account key](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) for that service account. Ensure that `gcloud` is set for `DNS_PROVIDER` in `udm-le.env`, and `GCE_SERVICE_ACCOUNT_FILE` references the path to the service account key (e.g. `./root/.secrets/my_service_account.json`) . Create a new directory called `.secrets` in `/data/udm-le` and add the service account file.
-
-The CLI will output a JSON object. Use the printed properties to initialize your configuration in [udm-le.env](./udm-le.env).
-
-Note:
-
-* The `password` value is a secret and as such you may want to omit it from [udm-le.env](./udm-le.env) and instead set it in a `.secrets/client-secret.txt` file
-* The `appId` value is what [Lego](https://go-acme.github.io/lego/) calls a client id
 
 ### Google Domains
 
